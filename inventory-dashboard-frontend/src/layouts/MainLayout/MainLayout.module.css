@@ -1,0 +1,26 @@
+/* src/layouts/MainLayout/MainLayout.module.css */
+
+/* ... other rules (.appContainer) ... */
+
+.contentArea {
+  flex-grow: 1;
+  padding: 20px;
+  padding-left: 220px; /* Adjust based on expanded sidebar */
+  overflow-y: auto;
+  box-sizing: border-box;
+  /* --- Gradient Background --- */
+  background-color: var(--color-background, #F9FAFB); /* Fallback solid color */
+  background-image: linear-gradient(
+    to bottom right, /* Direction: Diagonal */
+    hsl(170, 50%, 94%), /* Start Color: Light Teal */
+    hsl(210, 40%, 96%) /* End Color: Very Light Blue-Gray */
+  );
+  /* --- End Gradient Background --- */
+  transition: padding-left 0.3s ease-in-out;
+}
+
+.contentArea.collapsed {
+  padding-left: 100px; /* Adjust based on collapsed sidebar */
+}
+
+/* ... */

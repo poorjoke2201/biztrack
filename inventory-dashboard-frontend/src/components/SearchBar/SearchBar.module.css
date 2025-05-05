@@ -1,0 +1,27 @@
+.searchBar {
+    display: flex;
+    margin-bottom: 20px;
+    gap: 10px;
+  }
+  
+  .searchBar input[type="text"] {
+    flex-grow: 1;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 16px;
+  }
+  
+  .searchBar button {
+    background-color: #6c757d; /* Example button color */
+    color: white;
+    border: none;
+    padding: 10px 15px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 16px;
+  }
+  
+  .searchBar button:hover {
+    background-color: #5a6268;
+  }
