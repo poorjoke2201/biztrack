@@ -1,41 +1,20 @@
-import { useState, useEffect, useContext } from 'react';
-import { AuthContext } from '../context/AuthContext'; // Assuming you have an AuthContext
+// src/hooks/useAuth.js
+// CORRECT version - relies on AuthContext.js having the logic
 
-const useAuth = () => {
-  const { user, setUser, isAuthenticated, setIsAuthenticated } = useContext(AuthContext);
+import { useContext } from 'react';
+import { AuthContext } from '../context/AuthContext'; // Ensure path is correct
 
-  // Example function to check if a token exists
-  const checkAuthToken = () => {
-    const token = localStorage.getItem('authToken');
-    if (token && !isAuthenticated) {
-      setIsAuthenticated(true);
-      // Optionally fetch user data based on the token
-      // setUser(/* user data */);
-    } else if (!token && isAuthenticated) {
-      setIsAuthenticated(false);
-      setUser(null);
-    }
-  };
-
-  useEffect(() => {
-    checkAuthToken();
-    // Optionally set up event listeners for login/logout events
-  }, [isAuthenticated, setIsAuthenticated, setUser]);
-
-  const login = (token, userData) => {
-    localStorage.setItem('authToken', token);
-    setIsAuthenticated(true);
-    setUser(userData);
-  };
-
-  const logout = () => {
-    localStorage.removeItem('authToken');
-    setIsAuthenticated(false);
-    setUser(null);
-    // Optionally redirect the user
-  };
-
-  return { user, isAuthenticated, login, logout };
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    // This error means you're trying to use useAuth outside of an AuthProvider
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  // It simply returns the 'value' provided by AuthContext.Provider
+  // which includes { user, token, isAuthenticated, loading, login, logout }
+  return context;
 };
 
-export default useAuth;
+// Usually no default export needed if AuthContext is default export,
+// but if AuthContext is a named export, this is fine:
+// export default useAuth;

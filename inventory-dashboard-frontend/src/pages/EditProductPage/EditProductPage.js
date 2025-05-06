@@ -1,67 +1,91 @@
+// src/pages/EditProductPage/EditProductPage.js
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-//import MainLayout from '../../layouts/MainLayout/MainLayout';
-import EditProductForm from './EditProductForm';
 import styles from './EditProductPage.module.css';
-import { getProductById } from '../../services/inventoryService'; // Assuming you have this service
+import EditProductForm from './EditProductForm'; // Import the form component
+import { getProductById } from '../../services/productService'; // Service for fetching
+import { getAllCategories } from '../../services/categoryService'; // Fetch categories here too
+import Spinner from '../../components/Spinner/Spinner'; // Assuming path
+import Alert from '../../components/Alert/Alert'; // Assuming path
+import Button from '../../components/Button/Button'; // For Back button
 
 const EditProductPage = () => {
-  const { id } = useParams(); // Get the product ID from the route params
-  const [product, setProduct] = useState(null);
+  const { productId } = useParams(); // Get the product ID from the route params
+  const [product, setProduct] = useState(null); // Store fetched product data
+  const [categories, setCategories] = useState([]); // Store fetched categories
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const navigate = useNavigate();
 
   useEffect(() => {
-    const fetchProduct = async () => {
+    let isMounted = true;
+    const fetchData = async () => {
+      if (!productId) {
+        setError("No product ID specified.");
+        setLoading(false);
+        return;
+      }
       setLoading(true);
       setError(null);
       try {
-        const data = await getProductById(id);
-        setProduct(data);
-        setLoading(false);
+         // Fetch product and categories required by the form
+        const [productData, categoriesData] = await Promise.all([
+          getProductById(productId),
+          getAllCategories() // Fetch categories needed for the dropdown
+        ]);
+
+        if (isMounted) {
+            if (productData) {
+                setProduct(productData);
+            } else {
+                setError(`Product with ID ${productId} not found.`);
+            }
+            setCategories(categoriesData || []);
+        }
       } catch (err) {
-        setError('Failed to load product details.');
-        setLoading(false);
-        console.error('Error fetching product:', err);
-        // Optionally redirect to view inventory page if product not found
-        // navigate('/view-inventory');
+        if (isMounted) {
+            console.error('Error fetching data for edit page:', err);
+            setError(err.response?.data?.message || 'Failed to load product details.');
+        }
+      } finally {
+        if (isMounted) setLoading(false);
       }
     };
 
-    fetchProduct();
-  }, [id, navigate]);
+    fetchData();
+    return () => { isMounted = false; }; // Cleanup
+  }, [productId]); // Re-fetch if ID changes
 
   if (loading) {
     return (
-      //<MainLayout>
-        <div className={styles.editProductPage}>
-          <h2>Edit Product</h2>
-          <p>Loading product details...</p>
-        </div>
-      //</MainLayout>
-    );
-  }
-
-  if (error) {
-    return (
-      //<MainLayout>
-        <div className={styles.editProductPage}>
-          <h2>Edit Product</h2>
-          <p className={styles.error}>{error}</p>
-          <button onClick={() => navigate('/view-inventory')}>Back to Inventory</button>
-        </div>
-      //</MainLayout>
-    );
-  }
-
-  return (
-    //<MainLayout>
       <div className={styles.editProductPage}>
         <h2>Edit Product</h2>
-        {product && <EditProductForm initialProduct={product} />}
+        <Spinner message="Loading product details..." />
       </div>
-    //</MainLayout>
+    );
+  }
+
+  // If error occurred during fetch OR product wasn't found
+  if (error || !product) {
+    return (
+      <div className={styles.editProductPage}>
+        <h2>Edit Product</h2>
+        <Alert type="error" message={error || `Product with ID ${productId} not found.`} />
+        {/* Use Button component */}
+        <Button onClick={() => navigate('/inventory')} variant="secondary" style={{marginTop: '1rem'}}>
+            Back to Inventory
+        </Button>
+      </div>
+    );
+  }
+
+  // Render the Form component, passing fetched data as props
+  return (
+    <div className={styles.editProductPage}>
+      {/* Title is now inside the form component */}
+      {/* Pass product and categories data down */}
+      <EditProductForm productToEdit={product} categoryList={categories} />
+    </div>
   );
 };
 

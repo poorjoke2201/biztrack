@@ -1,23 +1,40 @@
-import React from 'react';
+// src/pages/AddProductPage/AddProductPage.js
+import React, { useState } from 'react'; // <-- Added useState
 import styles from './AddProductPage.module.css';
-import AddProductForm from './AddProductForm'; // The form component itself
-import Button from '../../components/Button/Button'; // For header buttons
+import AddProductForm from './AddProductForm';
+import Button from '../../components/Button/Button';
+import Modal from '../../components/Modal/Modal'; // <-- Import Modal
+import CategoryAddForm from '../../components/categories/CategoryAddForm'; // <-- Import Category Form
 
 // TODO: Import icons if using an icon library
-// import { FaShoppingCart, FaPlus, FaUpload } from 'react-icons/fa';
 
 const AddProductPage = () => {
-  // Placeholder functions for header buttons
-  const handleNewProductType = () => {
-    // TODO: Implement logic for adding/managing categories if needed in future
-    // Since backend only stores categoryName as string, this might open a modal
-    // to suggest categories or just be informational for now.
-    alert('New Product Type button clicked (functionality TBD)');
+  // --- State to control the category modal ---
+  const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
+  // --- State to trigger refetch in AddProductForm ---
+  const [categoryAddedKey, setCategoryAddedKey] = useState(0); // Key to force re-render/refetch
+
+  // --- Open category modal ---
+  const handleManageCategories = () => {
+    setIsCategoryModalOpen(true);
   };
 
+  // --- Close category modal ---
+  const handleCloseCategoryModal = () => {
+    setIsCategoryModalOpen(false);
+  };
+
+  // --- Callback when a category is successfully added ---
+  const handleCategoryAdded = (newCategory) => {
+    console.log("New category added:", newCategory);
+    handleCloseCategoryModal(); // Close modal on success
+    // Increment key to trigger refetch in AddProductForm's useEffect
+    setCategoryAddedKey(prevKey => prevKey + 1);
+  };
+
+
   const handleUploadFile = () => {
-    // TODO: Implement file upload logic (opens file dialog, handles upload)
-    alert('Upload File button clicked (functionality TBD)');
+    alert('Bulk Upload Products functionality TBD');
   };
 
 
@@ -25,26 +42,34 @@ const AddProductPage = () => {
     <div className={styles.pageContainer}>
       <div className={styles.header}>
         <h2 className={styles.pageTitle}>
-          {/* <FaShoppingCart className={styles.titleIcon} />  */}
-          <span className={styles.iconPlaceholder}>🛒</span> {/* Placeholder Icon */}
-          Add Product Stock
+          <span className={styles.iconPlaceholder}>🛒</span>
+          Add New Product
         </h2>
         <div className={styles.headerActions}>
-          {/* --- Header Buttons --- */}
-          <Button onClick={handleNewProductType} variant="secondary" size="small">
-            {/* <FaPlus /> */} ➕ New Product Type
+           {/* --- Updated "Manage Categories" Button --- */}
+          <Button onClick={handleManageCategories} variant="secondary" size="small">
+             ➕ Manage Categories
           </Button>
           <Button onClick={handleUploadFile} variant="outline" size="small">
-            {/* <FaUpload /> */} ⬆️ Upload File
+             ⬆️ Bulk Upload
           </Button>
-           {/* --- End Header Buttons --- */}
         </div>
       </div>
 
-      {/* Container for the form itself */}
       <div className={styles.formContainer}>
-        <AddProductForm />
+         {/* Pass the key to AddProductForm to trigger refetch */}
+        <AddProductForm key={categoryAddedKey} />
       </div>
+
+      {/* --- Category Management Modal --- */}
+      <Modal
+          isOpen={isCategoryModalOpen}
+          onClose={handleCloseCategoryModal}
+          title="Add New Category"
+        >
+            {/* Render the category form inside the modal */}
+            <CategoryAddForm onCategoryAdded={handleCategoryAdded} />
+      </Modal>
     </div>
   );
 };

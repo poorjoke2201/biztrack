@@ -1,68 +1,56 @@
+// src/pages/EditProductPage/EditProductForm.js
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom'; // Import useParams
-import styles from './EditProductPage.module.css'; // Use the same CSS module or create a specific one
-// Import necessary service functions
-import { updateProduct, getProductCategories } from '../../services/inventoryService';
+import { useNavigate } from 'react-router-dom'; // Keep navigate for cancel/success
+import styles from './EditProductPage.module.css'; // Reuse same module or create specific one
+import { updateProduct } from '../../services/productService'; // Only need update function
 import Alert from '../../components/Alert/Alert';
 import Spinner from '../../components/Spinner/Spinner';
+import InputField from '../../components/InputField/InputField';
+import Button from '../../components/Button/Button';
 
-// Receive initialProduct as prop
-const EditProductForm = ({ initialProduct }) => {
-  // --- State variables aligned with backend model fields ---
+// Accept productToEdit and categoryList as props
+const EditProductForm = ({ productToEdit, categoryList = [] }) => {
+  // Initialize state from props
   const [name, setName] = useState('');
-  const [categoryInput, setCategoryInput] = useState(''); // For the category input/datalist
-  const [categoryList, setCategoryList] = useState([]); // For existing categories
-  const [cost_price, setCostPrice] = useState('');
-  const [selling_price, setSellingPrice] = useState('');
+  const [sku, setSku] = useState('');
+  const [description, setDescription] = useState('');
+  const [selectedCategoryId, setSelectedCategoryId] = useState('');
+  const [costPrice, setCostPrice] = useState('');
+  const [sellingPrice, setSellingPrice] = useState('');
   const [mrp, setMrp] = useState('');
-  const [stock, setStock] = useState('');
+  const [currentStockDisplay, setCurrentStockDisplay] = useState('N/A'); // For read-only display
   const [lowStockThreshold, setLowStockThreshold] = useState('');
-  // Optional: Add state for discount, mfd, expiryDate if needed
+  const [discountPercentage, setDiscountPercentage] = useState('');
+  // Add date states if needed
+  // const [manufactureDate, setManufactureDate] = useState('');
+  // const [expiryDate, setExpiryDate] = useState('');
 
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
-  const [loading, setLoading] = useState(false); // Loading state for submit
-  const [loadingCategories, setLoadingCategories] = useState(false); // Loading state for categories
+  const [submitting, setSubmitting] = useState(false); // Only submitting state needed here
 
   const navigate = useNavigate();
-  const { id: productId } = useParams(); // Get productId directly from URL params
+  const productId = productToEdit?._id; // Get ID from the passed prop
 
-  // --- Fetch Categories ---
+  // --- Effect to pre-fill form when productToEdit prop changes ---
   useEffect(() => {
-    let isMounted = true;
-    const fetchCategories = async () => {
-      setLoadingCategories(true);
-      try {
-        const fetchedCategories = await getProductCategories();
-        if (isMounted && Array.isArray(fetchedCategories)) {
-          setCategoryList(fetchedCategories);
-        }
-      } catch (catError) {
-        console.error("Failed to load categories", catError);
-        // Optionally set an error state if category loading fails
-      } finally {
-         if (isMounted) setLoadingCategories(false);
-      }
-    };
-    fetchCategories();
-    return () => { isMounted = false; } // Cleanup
-  }, []); // Run once on mount
-
-  // --- Pre-fill Form when initialProduct data is available ---
-  useEffect(() => {
-    if (initialProduct) {
-      console.log("Pre-filling form with:", initialProduct); // Debug log
-      setName(initialProduct.name || '');
-      setCategoryInput(initialProduct.category || ''); // Use categoryInput state
-      // Convert numbers to strings for input fields, handle null/undefined
-      setCostPrice(initialProduct.cost_price != null ? String(initialProduct.cost_price) : '');
-      setSellingPrice(initialProduct.selling_price != null ? String(initialProduct.selling_price) : '');
-      setMrp(initialProduct.mrp != null ? String(initialProduct.mrp) : '');
-      setStock(initialProduct.stock != null ? String(initialProduct.stock) : '');
-      setLowStockThreshold(initialProduct.lowStockThreshold != null ? String(initialProduct.lowStockThreshold) : '');
-      // Set other fields if applicable (discount, mfd, expiryDate)
+    if (productToEdit) {
+      console.log("EditProductForm: Pre-filling form with prop data:", productToEdit);
+      setName(productToEdit.name || '');
+      setSku(productToEdit.sku || '');
+      setDescription(productToEdit.description || '');
+      setSelectedCategoryId(productToEdit.category?._id || ''); // Use category ID from prop
+      setCostPrice(productToEdit.costPrice != null ? String(productToEdit.costPrice) : '');
+      setSellingPrice(productToEdit.sellingPrice != null ? String(productToEdit.sellingPrice) : '');
+      setMrp(productToEdit.mrp != null ? String(productToEdit.mrp) : '');
+      setCurrentStockDisplay(productToEdit.currentStock != null ? String(productToEdit.currentStock) : 'N/A');
+      setLowStockThreshold(productToEdit.lowStockThreshold != null ? String(productToEdit.lowStockThreshold) : '');
+      setDiscountPercentage(productToEdit.discountPercentage != null ? String(productToEdit.discountPercentage) : '');
+      // Set dates if needed (ensure correct formatting e.g., YYYY-MM-DD for input type="date")
+      // setManufactureDate(productToEdit.manufactureDate ? new Date(productToEdit.manufactureDate).toISOString().split('T')[0] : '');
+      // setExpiryDate(productToEdit.expiryDate ? new Date(productToEdit.expiryDate).toISOString().split('T')[0] : '');
     }
-  }, [initialProduct]); // Re-run if initialProduct changes
+  }, [productToEdit]); // Re-run only if the product prop changes
 
   // --- Handle Submit ---
   const handleSubmit = async (event) => {
@@ -70,122 +58,125 @@ const EditProductForm = ({ initialProduct }) => {
     setError('');
     setSuccessMessage('');
 
-    // Basic Frontend Validation
-    if (!name || !selling_price || !stock) {
-        setError('Product Name, Selling Price, and Stock are required.');
+    if (!productId) {
+        setError("Cannot update product without a valid ID.");
         return;
     }
-     if (isNaN(parseFloat(selling_price)) || isNaN(parseInt(stock, 10))) {
-         setError('Please enter valid numbers for prices and stock.');
-         return;
-     }
 
-    setLoading(true);
+    // Validation
+    if (!name || !sku || !selectedCategoryId || sellingPrice === '') {
+      setError('SKU, Product Name, Category, and Selling Price are required.');
+      return;
+    }
+    if (isNaN(parseFloat(sellingPrice))) {
+      setError('Please enter a valid number for Selling Price.');
+      return;
+    }
+    // Add more validation...
+
+    setSubmitting(true);
+    const productData = {
+      sku: sku.trim(),
+      name: name.trim(),
+      description: description.trim(),
+      categoryId: selectedCategoryId,
+      costPrice: costPrice !== '' ? parseFloat(costPrice) : undefined,
+      sellingPrice: parseFloat(sellingPrice),
+      mrp: mrp !== '' ? parseFloat(mrp) : undefined,
+      discountPercentage: discountPercentage !== '' ? parseFloat(discountPercentage) : undefined,
+      lowStockThreshold: lowStockThreshold !== '' ? parseInt(lowStockThreshold, 10) : undefined,
+      // manufactureDate: manufactureDate || undefined,
+      // expiryDate: expiryDate || undefined,
+      // DO NOT SEND currentStock
+    };
 
     try {
-      // --- Construct data object for UPDATE ---
-      // Only include fields that are actually managed by the form state
-      const productData = {
-        name,
-        category: categoryInput.trim() || undefined, // Use trimmed input or undefined
-        cost_price: cost_price !== '' ? parseFloat(cost_price) : undefined,
-        selling_price: parseFloat(selling_price), // Required
-        mrp: mrp !== '' ? parseFloat(mrp) : undefined,
-        stock: parseInt(stock, 10), // Required
-        lowStockThreshold: lowStockThreshold !== '' ? parseInt(lowStockThreshold, 10) : undefined,
-        // Add other fields if managed by state (discount, mfd, expiryDate)
-      };
-
-      console.log(`Sending update data for product ${productId}:`, productData);
-
-      // --- Correct call to updateProduct service ---
       const response = await updateProduct(productId, productData);
-      setLoading(false);
-
-      // --- Correct Success Check (backend returns updated object) ---
-      if (response && response._id) {
-        setSuccessMessage(`Product '${response.name}' updated successfully!`);
-        // Redirect back to inventory list after a short delay
-        setTimeout(() => navigate('/view-inventory'), 1500);
-      } else {
-        // Use error message from response if available
-        setError(response?.message || 'Failed to update product. Unexpected response.');
-      }
+      setSuccessMessage(`Product '${response.name}' updated successfully!`);
+      setError(''); // Clear error on success
+      // Optionally update the display stock based on response if backend sends it? Generally no.
+      // Or navigate away:
+      // setTimeout(() => navigate('/view-inventory'), 1500);
     } catch (err) {
-      setLoading(false);
       console.error('Error updating product:', err);
-      setError(err.response?.data?.message || err.message || 'An unexpected network or server error occurred.');
+      setError(err.response?.data?.message || err.message || 'An unexpected error occurred.');
+      setSuccessMessage(''); // Clear success message on error
+    } finally {
+      setSubmitting(false);
     }
   };
 
   // --- Render Form ---
+  // No loading state check needed here as parent handles initial load
+  if (!productToEdit) {
+      // This should technically not happen if the parent page handles errors,
+      // but good as a fallback.
+      return <Alert type="error" message="Product data not available." />;
+  }
+
   return (
-    // Use EditProductPage.module.css or a shared form style
-    <form onSubmit={handleSubmit} className={styles.editProductForm}>
-      {error && <Alert type="error" message={error} />}
-      {successMessage && <Alert type="success" message={successMessage} />}
+    // Use same container class or a specific one if needed
+    <div className={styles.formContainer}> {/* Make sure formContainer style exists */}
+      <form onSubmit={handleSubmit} className={styles.editProductForm}> {/* Make sure editProductForm style exists */}
+        <h2>Edit Product: {productToEdit?.name}</h2> {/* Display name in title */}
+        {error && !submitting && <Alert type="error" message={error} onClose={() => setError('')}/>}
+        {successMessage && <Alert type="success" message={successMessage} onClose={() => setSuccessMessage('')}/>}
 
-      {/* Input Fields (similar to AddProductForm, but bound to edit state) */}
-      <div className={styles.formGroup}>
-        <label htmlFor="name">Product Name *</label>
-        <input type="text" id="name" value={name} onChange={(e) => setName(e.target.value)} required />
-      </div>
+        {/* Read-Only Stock Display */}
+        <InputField label="Current Stock (Read-Only)" id="currentStockDisplay" type="text" value={currentStockDisplay} readOnly disabled helpText="Use Stock Adjustment features to change stock levels." />
 
-      {/* Category Input with Datalist */}
-      <div className={styles.formGroup}>
-        <label htmlFor="category-input">Category</label>
-        <input
-          type="text"
-          id="category-input"
-          list="category-list"
-          value={categoryInput}
-          onChange={(e) => setCategoryInput(e.target.value)}
-          placeholder={loadingCategories ? "Loading categories..." : "Type or select category"}
-          disabled={loadingCategories}
-        />
-        <datalist id="category-list">
-          {categoryList.map((cat, index) => (
-            <option key={index} value={cat} />
-          ))}
-        </datalist>
-      </div>
+        {/* Editable Fields */}
+        <InputField label="SKU *" id="sku" type="text" value={sku} onChange={(e) => setSku(e.target.value)} required disabled={submitting}/>
+        <InputField label="Product Name *" id="name" type="text" value={name} onChange={(e) => setName(e.target.value)} required disabled={submitting}/>
+        <InputField label="Description" id="description" type="textarea" value={description} onChange={(e) => setDescription(e.target.value)} disabled={submitting} rows={3}/>
 
-      {/* Cost Price */}
-       <div className={styles.formGroup}>
-        <label htmlFor="cost_price">Cost Price</label>
-        <input type="number" id="cost_price" step="0.01" value={cost_price} onChange={(e) => setCostPrice(e.target.value)} />
-      </div>
-      {/* Selling Price */}
-      <div className={styles.formGroup}>
-        <label htmlFor="selling_price">Selling Price *</label>
-        <input type="number" id="selling_price" step="0.01" value={selling_price} onChange={(e) => setSellingPrice(e.target.value)} required />
-      </div>
-      {/* MRP */}
-       <div className={styles.formGroup}>
-        <label htmlFor="mrp">MRP</label>
-        <input type="number" id="mrp" step="0.01" value={mrp} onChange={(e) => setMrp(e.target.value)} />
-      </div>
-      {/* Stock Quantity */}
-      <div className={styles.formGroup}>
-        <label htmlFor="stock">Stock Quantity *</label>
-        <input type="number" id="stock" step="1" value={stock} onChange={(e) => setStock(e.target.value)} required />
-      </div>
-      {/* Low Stock Threshold */}
-       <div className={styles.formGroup}>
-        <label htmlFor="lowStockThreshold">Low Stock Threshold</label>
-        <input type="number" id="lowStockThreshold" step="1" value={lowStockThreshold} onChange={(e) => setLowStockThreshold(e.target.value)} />
-      </div>
+        {/* Category Dropdown - Uses categoryList from props */}
+        <div className={styles.formGroup}> {/* Ensure formGroup style exists */}
+          <label htmlFor="category" className={styles.label}>Category *</label> {/* Ensure label style exists */}
+          <select
+            id="category"
+            value={selectedCategoryId}
+            onChange={(e) => setSelectedCategoryId(e.target.value)}
+            required
+            disabled={submitting || categoryList.length === 0} // Disable if submitting or no categories loaded
+            className={styles.selectField} // Ensure selectField style exists
+          >
+            <option value="" disabled>
+                {categoryList.length === 0 ? "Loading Categories..." : "Select a Category"}
+            </option>
+            {/* Map over categoryList passed as prop */}
+            {categoryList.map(cat => (
+              <option key={cat._id} value={cat._id}>
+                {cat.name}
+              </option>
+            ))}
+          </select>
+           {/* Optional: Show message if list is empty and not loading */}
+           {categoryList.length === 0 && !productToEdit && <small>No categories found.</small>}
+        </div>
 
-      {/* Add inputs for discount, mfd, expiryDate if needed */}
+        <InputField label="Cost Price (₹)" id="costPrice" type="number" min="0" step="0.01" value={costPrice} onChange={(e) => setCostPrice(e.target.value)} disabled={submitting}/>
+        <InputField label="Selling Price (₹) *" id="sellingPrice" type="number" min="0" step="0.01" value={sellingPrice} onChange={(e) => setSellingPrice(e.target.value)} required disabled={submitting}/>
+        <InputField label="MRP (₹)" id="mrp" type="number" min="0" step="0.01" value={mrp} onChange={(e) => setMrp(e.target.value)} disabled={submitting}/>
+        <InputField label="Discount (%)" id="discountPercentage" type="number" min="0" max="100" step="0.01" value={discountPercentage} onChange={(e) => setDiscountPercentage(e.target.value)} disabled={submitting} placeholder="e.g., 5 or 10.5"/>
+        <InputField label="Low Stock Threshold" id="lowStockThreshold" type="number" min="0" step="1" value={lowStockThreshold} onChange={(e) => setLowStockThreshold(e.target.value)} disabled={submitting} placeholder="e.g., 10"/>
 
-      <button type="submit" disabled={loading || loadingCategories}>
-        {loading ? <Spinner size="small" /> : 'Update Product'}
-      </button>
-      {/* Optional: Cancel button */}
-      <button type="button" onClick={() => navigate('/view-inventory')} className={styles.cancelButton} disabled={loading}>
-        Cancel
-      </button>
-    </form>
+        {/* Date Inputs - Uncomment and adjust if needed */}
+        {/* <InputField label="Manufacture Date" id="manufactureDate" type="date" value={manufactureDate} onChange={(e) => setManufactureDate(e.target.value)} disabled={submitting} /> */}
+        {/* <InputField label="Expiry Date" id="expiryDate" type="date" value={expiryDate} onChange={(e) => setExpiryDate(e.target.value)} disabled={submitting} /> */}
+
+        {/* Action Buttons */}
+        <div className={styles.buttonGroup}> {/* Ensure buttonGroup style exists */}
+          <Button type="submit" disabled={submitting}>
+            {submitting ? <Spinner size="small" /> : 'Update Product'}
+          </Button>
+          {/* Correct navigation path */}
+          <Button type="button" onClick={() => navigate('/view-inventory')} variant="secondary" disabled={submitting}>
+            Cancel
+          </Button>
+        </div>
+      </form>
+    </div>
   );
 };
 

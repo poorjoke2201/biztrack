@@ -1,7 +1,8 @@
+// models/User.js
 const mongoose = require('mongoose');
 
 const userSchema = new mongoose.Schema({
-  name: { // Changed from firstName/lastName
+  name: {
     type: String,
     required: [true, 'Please add a name'],
   },
@@ -17,24 +18,34 @@ const userSchema = new mongoose.Schema({
   password: {
     type: String,
     required: [true, 'Please add a password'],
-    minlength: 6, // Optional: Enforce minimum length
-    select: false, // Typically hide password by default when querying
+    minlength: 6,
+    select: false,
   },
   role: {
     type: String,
-    enum: ['staff', 'admin'], // Define possible roles
+    enum: ['staff', 'admin'],
     default: 'staff',
   },
-  // --- Optional: Add phoneNumber if needed ---
-  // phoneNumber: {
+  // --- Added Fields ---
+  phoneNumber: {
+    type: String,
+    trim: true,
+    // Add validation if required, e.g., regex match
+  },
+  isActive: { // To disable user access without deleting
+    type: Boolean,
+    default: true
+  },
+  // employeeId: { // Optional: if you need a separate employee identifier
   //   type: String,
-  //   // Add validation if required
+  //   unique: true,
+  //   sparse: true // Allows nulls while maintaining uniqueness for set values
   // },
+  // --- End Added Fields ---
 }, {
-  timestamps: true, // Adds createdAt and updatedAt
+  timestamps: true,
 });
 
-// Add pre-save hook for password hashing if not done in the route handler
-// (The route handler version is already implemented based on previous code)
+// Ensure you have password hashing logic BEFORE saving (usually in authRoutes.js)
 
 module.exports = mongoose.model('User', userSchema);
