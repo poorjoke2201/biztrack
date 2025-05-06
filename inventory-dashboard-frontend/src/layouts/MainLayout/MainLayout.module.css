@@ -1,26 +1,47 @@
 /* src/layouts/MainLayout/MainLayout.module.css */
 
-/* ... other rules (.appContainer) ... */
+/* .appContainer might not be needed anymore if mainBodyContainer is the root of the layout */
+/* If you keep .appContainer, ensure it's just for full height or basic wrapper */
+.appContainer {
+  /* This style might be redundant now if MainLayout's root is mainBodyContainer */
+  height: 100vh;
+  display: flex; /* If mainBodyContainer is the direct child */
+}
+
+
+/* This becomes the primary layout container for Sidebar + Content */
+.mainBodyContainer {
+  display: flex;
+  flex-grow: 1;        /* Takes up remaining vertical space (if .appContainer is flex-column) OR full height */
+  height: 100vh;       /* Ensure it takes full viewport height */
+  position: relative;
+  overflow: hidden;
+}
+
+/* Sidebar is position: fixed, so it overlays.
+   contentArea padding will account for it. */
 
 .contentArea {
   flex-grow: 1;
-  padding: 20px;
-  padding-left: 220px; /* Adjust based on expanded sidebar */
+  /* *** REMOVE PADDING-TOP for Navbar height *** */
+  /* padding-top: 70px; */ /* NO LONGER NEEDED */
+  padding-top: 20px; /* Add some default top padding for content */
+  padding-right: 20px;
+  padding-bottom: 20px;
+  /* padding-left is for the expanded sidebar */
+  padding-left: 260px; /* Example: 240px Sidebar width + 20px spacing */
   overflow-y: auto;
   box-sizing: border-box;
-  /* --- Gradient Background --- */
-  background-color: var(--color-background, #F9FAFB); /* Fallback solid color */
+  background-color: var(--color-background, #F9FAFB);
   background-image: linear-gradient(
-    to bottom right, /* Direction: Diagonal */
-    hsl(170, 50%, 94%), /* Start Color: Light Teal */
-    hsl(210, 40%, 96%) /* End Color: Very Light Blue-Gray */
+    to bottom right,
+    hsl(170, 50%, 94%),
+    hsl(210, 40%, 96%)
   );
-  /* --- End Gradient Background --- */
   transition: padding-left 0.3s ease-in-out;
 }
 
-.contentArea.collapsed {
-  padding-left: 100px; /* Adjust based on collapsed sidebar */
+/* Adjust padding-left when sidebar is collapsed */
+.contentArea.contentAreaCollapsed {
+  padding-left: 90px; /* Example: 70px collapsed Sidebar width + 20px spacing */
 }
-
-/* ... */

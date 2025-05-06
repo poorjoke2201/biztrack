@@ -19,7 +19,11 @@ const SearchBar = ({ onSearch, placeholder }) => {
         onChange={handleChange}
       />
       {searchTerm && (
-        <button onClick={() => { setSearchTerm(''); onSearch(''); }}>Clear</button>
+        <button onClick={() => { setSearchTerm(''); onSearch(''); }} title="Clear search">
+        × {/* HTML entity for X */}
+        {/* Or use an icon: <FaTimes /> */}
+        </button>
+        //<button onClick={() => { setSearchTerm(''); onSearch(''); }}>Clear</button>
       )}
     </div>
   );

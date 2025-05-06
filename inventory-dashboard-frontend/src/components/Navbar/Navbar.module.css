@@ -1,10 +1,18 @@
 .navbar {
-    background-color: #333;
-    color: white;
-    padding: 15px 20px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+  background-color: #333; /* Your existing color */
+  /* -- OR use theme variable: background-color: var(--color-neutral-800, #333); -- */
+  color: white;
+  padding: 0 20px; /* Adjust vertical padding to control height or set fixed height */
+  height: 60px; /* *** EXAMPLE: Set a fixed height *** */
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: fixed; /* Make Navbar fixed to the top */
+  top: 0;
+  left: 0;
+  width: 100%;
+  z-index: 1001; /* Higher than sidebar if sidebar is also fixed and meant to be under */
+  box-shadow: var(--shadow-md); /* Optional: add shadow */
   }
   
   .logo a {
