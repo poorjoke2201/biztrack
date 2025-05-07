@@ -1,14 +1,16 @@
 // src/pages/DashboardPage/DashboardPage.js
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom'; // For navigation
+import { Link } from 'react-router-dom';
 import styles from './DashboardPage.module.css';
 import { useAuth } from '../../context/AuthContext';
-import StatCard from './StatCard'; // Ensure StatCard.js is in the same folder
-import InfoListCard from '../../components/InfoListCard/InfoListCard'; // Adjust path if needed
+import StatCard from './StatCard';
+import InfoListCard from '../../components/InfoListCard/InfoListCard';
 import { getDashboardSummary } from '../../services/analyticsService';
-import Spinner from '../../components/Spinner/Spinner'; // Adjust path if needed
-import Alert from '../../components/Alert/Alert';       // Adjust path if needed
-import { formatCurrency, formatDate } from '../../utils/helpers'; // Adjust path if needed
+import Spinner from '../../components/Spinner/Spinner';
+import Alert from '../../components/Alert/Alert';
+import { formatCurrency, formatDate } from '../../utils/helpers';
+// Import SalesChart from AnalyticsPage folder or a shared components/analytics folder
+import SalesChart from '../AnalyticsPage/SalesChart'; // Adjust path if SalesChart is moved
 
 const DashboardPage = () => {
   const { user } = useAuth();
@@ -21,6 +23,7 @@ const DashboardPage = () => {
       setLoading(true); setError(null);
       try {
         const data = await getDashboardSummary();
+        console.log("DashboardPage Data received:", data);
         setDashboardData(data);
       } catch (err) {
         setError(err.response?.data?.message || 'Failed to load dashboard data.');
@@ -36,23 +39,17 @@ const DashboardPage = () => {
   const displayName = user?.name || user?.email || 'User';
   const {
     productCount, outOfStockCount, revenueToday, revenueThisMonth, totalRevenue,
-    topSellingProducts = [], lowestSellingProducts = [], alerts = [], recentInvoices = []
+    topSellingProducts = [], lowestSellingProducts = [], alerts = [], recentInvoices = [],
+    last7DaysSales = [] // Expect this from backend
   } = dashboardData;
 
-  // Prepare items for InfoListCard with Links
   const formatProductListItemsForInfoCard = (products) => {
-    return products.slice(0, 5).map(p => ({
-      id: p._id, // Use product's actual _id
-      // This 'content' prop will be rendered by InfoListCard
-      content: (
-        <Link to={`/products/${p._id}`} className={styles.infoListLink}>
-          {p.name}
-        </Link>
-      ),
+     return products.slice(0, 5).map(p => ({
+      id: p._id,
+      content: (<Link to={`/products/${p._id}`} className={styles.infoListLink}>{p.name}</Link>),
       details: `(${p.quantity || p.quantitySold || 0} units sold)`
     }));
   };
-
   const topSellingItems = formatProductListItemsForInfoCard(topSellingProducts);
   const lowestSellingItems = formatProductListItemsForInfoCard(lowestSellingProducts);
 
@@ -63,6 +60,7 @@ const DashboardPage = () => {
         <p className={styles.welcomeSubtitle}>Your stock summaries all in one place.</p>
       </div>
 
+      {/* Section for Key Metrics (StatCards) */}
       <section className={styles.section}>
           <h2 className={styles.sectionTitle}>Key Metrics</h2>
           <div className={`${styles.gridContainer} ${styles.statsGrid}`}>
@@ -75,37 +73,38 @@ const DashboardPage = () => {
           </div>
       </section>
 
+      {/* Section for Mini Sales Trend Chart */}
+      <section className={`${styles.section} ${styles.dashboardChartSection}`}>
+        <h2 className={styles.sectionTitle}>Recent Sales Activity</h2>
+        {/* Pass last7DaysSales data to the chart component */}
+        <SalesChart data={last7DaysSales} title="Sales - Last 7 Days" />
+        <p style={{ textAlign: 'center', marginTop: '1rem' }}>
+            <Link to="/analytics" className={styles.infoListLink}>View Full Analytics Report</Link>
+        </p>
+      </section>
+
+      {/* Section for Product Lists */}
       <section className={styles.section}>
           <h2 className={styles.sectionTitle}>Product Performance</h2>
           <div className={`${styles.gridContainer} ${styles.listsGrid}`}>
-            <InfoListCard
-                title="Top 5 Highest Selling Products"
-                items={topSellingItems}
-                emptyMessage="No top selling products data yet."
-            />
-            <InfoListCard
-                title="Top 5 Lowest Selling Products"
-                items={lowestSellingItems}
-                emptyMessage="No low selling products data yet."
-             />
+            <InfoListCard title="Top 5 Highest Selling Products" items={topSellingItems} emptyMessage="No top selling products data yet."/>
+            <InfoListCard title="Top 5 Lowest Selling Products" items={lowestSellingItems} emptyMessage="No low selling products data yet."/>
           </div>
       </section>
 
+      {/* Section for Alerts */}
       {alerts.length > 0 && (
         <section className={styles.section}>
           <h2 className={styles.sectionTitle}>Alerts</h2>
           <div className={styles.alertsContainer}>
             {alerts.map((alert, index) => (
-              <Alert
-                key={alert.productId || index} // Prefer unique ID if available
-                type={alert.type === 'OutOfStock' ? 'error' : (alert.type === 'LowStock' ? 'warning' : 'info')}
-                message={alert.message}
-              />
+              <Alert key={alert.productId || index} type={alert.type === 'OutOfStock' ? 'error' : (alert.type === 'LowStock' ? 'warning' : 'info')} message={alert.message}/>
             ))}
           </div>
         </section>
       )}
 
+      {/* Section for Recent Invoices */}
        {recentInvoices.length > 0 && (
             <section className={styles.section}>
                 <h2 className={styles.sectionTitle}>Recent Invoices</h2>
@@ -121,13 +120,6 @@ const DashboardPage = () => {
                 </ul>
             </section>
         )}
-
-      <section className={styles.section}>
-        <h2 className={styles.sectionTitle}>Sales Overview</h2>
-        <p className={styles.placeholderText}>
-            [Main sales trend chart and other key visualizations will appear here - <Link to="/analytics" className={styles.infoListLink}>View Full Analytics</Link>.]
-        </p>
-      </section>
     </div>
   );
 };
