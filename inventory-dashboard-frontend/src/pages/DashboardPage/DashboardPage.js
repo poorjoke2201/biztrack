@@ -1,153 +1,134 @@
+// src/pages/DashboardPage/DashboardPage.js
 import React, { useState, useEffect } from 'react';
-import styles from './DashboardPage.module.css'; // Styles for page layout
-// Assuming MainLayout handles Sidebar/Navbar
-// import MainLayout from '../../layouts/MainLayout/MainLayout';
-import { useAuth } from '../../context/AuthContext'; // Assuming this exists and works now
-import StatCard from './StatCard'; // StatCard is in the SAME folder
-import InfoListCard from '../../components/InfoListCard/InfoListCard'; // InfoListCard is in components
-// import { getDashboardData } from '../../services/analyticsService'; // Keep for API call
+import { Link } from 'react-router-dom'; // For navigation
+import styles from './DashboardPage.module.css';
+import { useAuth } from '../../context/AuthContext';
+import StatCard from './StatCard'; // Ensure StatCard.js is in the same folder
+import InfoListCard from '../../components/InfoListCard/InfoListCard'; // Adjust path if needed
+import { getDashboardSummary } from '../../services/analyticsService';
+import Spinner from '../../components/Spinner/Spinner'; // Adjust path if needed
+import Alert from '../../components/Alert/Alert';       // Adjust path if needed
+import { formatCurrency, formatDate } from '../../utils/helpers'; // Adjust path if needed
 
 const DashboardPage = () => {
-  const { user } = useAuth(); // Get user from context
-  const [stats, setStats] = useState({ // State for stats data
-    totalProducts: 0,
-    outOfStock: 0,
-  });
-  const [topSelling, setTopSelling] = useState([]);
-  const [lowSelling, setLowSelling] = useState([]);
-  const [alerts, setAlerts] = useState([]);
+  const { user } = useAuth();
+  const [dashboardData, setDashboardData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
     const fetchDashboardData = async () => {
-      setLoading(true);
-      setError(null);
+      setLoading(true); setError(null);
       try {
-        // TODO: Replace with actual API call
-        // const data = await getDashboardData();
-        // setStats({ totalProducts: data.totalProducts, outOfStock: data.productsOutOfStock });
-        // setTopSelling(data.topSellingProducts);
-        // setLowSelling(data.lowestSellingProducts);
-        // setAlerts(data.currentAlerts);
-
-        // --- Mock Data Implementation (matches images) ---
-        await new Promise(resolve => setTimeout(resolve, 500)); // Simulate network delay
-        setStats({ totalProducts: 125, outOfStock: 8 });
-        setTopSelling([
-            { id: "prod101", name: "Organic Apples" },
-            { id: "prod205", name: "Whole Wheat Bread" },
-            { id: "prod310", name: "Milk (Gallon)" },
-            { id: "prod102", name: "Bananas" },
-            { id: "prod401", name: "Cheddar Cheese Block" },
-        ]);
-        setLowSelling([
-            { id: "prod801", name: "Imported Truffle Oil" },
-            { id: "prod750", name: "Artisan Sourdough" },
-            { id: "prod911", name: "Quinoa Flour" },
-            // Add more if needed for "Top 5"
-            { id: "prod912", name: "Luxury Dog Biscuits" },
-            { id: "prod913", name: "Edible Glitter" },
-        ]);
-        setAlerts([
-           "Low stock warning: Organic Apples",
-           "New order received: #12346",
-           "Invoice #INV-002 payment received",
-       ]);
-       // --- End Mock Data ---
-
-        setLoading(false);
+        const data = await getDashboardSummary();
+        setDashboardData(data);
       } catch (err) {
-        setError('Failed to load dashboard data. Please try again later.');
-        setLoading(false);
-        console.error('Error fetching dashboard data:', err);
-      }
+        setError(err.response?.data?.message || 'Failed to load dashboard data.');
+      } finally { setLoading(false); }
     };
-
     fetchDashboardData();
   }, []);
 
-  // Optional: Show loading spinner component
-  if (loading) {
-    return (
-      // <MainLayout>
-        <div className={styles.messageContainer}>
-          <p>Loading dashboard...</p>
-          {/* You could add your Spinner component here */}
-        </div>
-      // </MainLayout>
-    );
-  }
+  if (loading) return <div className={styles.dashboardContainer}><div className={styles.messageContainer}><Spinner message="Loading dashboard..." /></div></div>;
+  if (error) return <div className={styles.dashboardContainer}><div className={styles.messageContainer}><Alert type="error" message={error} /></div></div>;
+  if (!dashboardData) return <div className={styles.dashboardContainer}><div className={styles.messageContainer}><p>No dashboard data available.</p></div></div>;
 
-  if (error) {
-    return (
-       // <MainLayout>
-         <div className={styles.messageContainer}>
-           <p className={styles.error}>{error}</p>
-         </div>
-       // </MainLayout>
-    );
-  }
-
-  // Determine display name
   const displayName = user?.name || user?.email || 'User';
+  const {
+    productCount, outOfStockCount, revenueToday, revenueThisMonth, totalRevenue,
+    topSellingProducts = [], lowestSellingProducts = [], alerts = [], recentInvoices = []
+  } = dashboardData;
+
+  // Prepare items for InfoListCard with Links
+  const formatProductListItemsForInfoCard = (products) => {
+    return products.slice(0, 5).map(p => ({
+      id: p._id, // Use product's actual _id
+      // This 'content' prop will be rendered by InfoListCard
+      content: (
+        <Link to={`/products/${p._id}`} className={styles.infoListLink}>
+          {p.name}
+        </Link>
+      ),
+      details: `(${p.quantity || p.quantitySold || 0} units sold)`
+    }));
+  };
+
+  const topSellingItems = formatProductListItemsForInfoCard(topSellingProducts);
+  const lowestSellingItems = formatProductListItemsForInfoCard(lowestSellingProducts);
 
   return (
-    // Assuming MainLayout provides the overall structure with Sidebar
-    // <MainLayout>
-      <div className={styles.dashboardContainer}>
-        {/* Welcome Message */}
-        <div className={styles.welcomeSection}>
-          <h1 className={styles.welcomeTitle}>
-            Hello, {displayName}!
-          </h1>
-          <p className={styles.welcomeSubtitle}>
-            Your stock summaries all in one place.
-          </p>
-        </div>
+    <div className={styles.dashboardContainer}>
+      <div className={styles.welcomeSection}>
+        <h1 className={styles.welcomeTitle}>Hello, {displayName}!</h1>
+        <p className={styles.welcomeSubtitle}>Your stock summaries all in one place.</p>
+      </div>
 
-        {/* Analytics Section */}
-        <section className={styles.section}>
-          <h2 className={styles.sectionTitle}>Analytics at a glance</h2>
-          <p className={styles.placeholderText}>[Graphs and detailed charts will be displayed here, fetched from analytics data.]</p>
+      <section className={styles.section}>
+          <h2 className={styles.sectionTitle}>Key Metrics</h2>
+          <div className={`${styles.gridContainer} ${styles.statsGrid}`}>
+            <StatCard value={productCount ?? 'N/A'} label="Total Products" />
+            <StatCard value={outOfStockCount ?? 'N/A'} label="Products Out of Stock" />
+            <StatCard value={formatCurrency(revenueToday)} label="Revenue Today" />
+            <StatCard value={formatCurrency(revenueThisMonth)} label="Revenue This Month" />
+            <StatCard value={formatCurrency(totalRevenue)} label="Total Revenue (All Time)" />
+            <StatCard value={alerts.filter(a => a.type === 'LowStock').length} label="Low Stock Items" />
+          </div>
+      </section>
 
-          {/* Grid for Stats and Lists */}
-          <div className={styles.gridContainer}>
-            {/* Use StatCard component */}
-            <StatCard value={stats.totalProducts} label="Count of all the products" />
-            <StatCard value={stats.outOfStock} label="Products out of stock" />
-
-            {/* Use InfoListCard component */}
+      <section className={styles.section}>
+          <h2 className={styles.sectionTitle}>Product Performance</h2>
+          <div className={`${styles.gridContainer} ${styles.listsGrid}`}>
             <InfoListCard
-                title="Top 5 highest selling products"
-                items={topSelling.slice(0, 5)} // Ensure max 5 items
-                baseLinkPath="/product-details/" // TODO: Adjust link path
-                emptyMessage="No top selling products found."
+                title="Top 5 Highest Selling Products"
+                items={topSellingItems}
+                emptyMessage="No top selling products data yet."
             />
             <InfoListCard
-                title="Top 5 lowest selling products"
-                items={lowSelling.slice(0, 5)} // Ensure max 5 items
-                baseLinkPath="/product-details/" // TODO: Adjust link path
-                emptyMessage="No low selling products found."
+                title="Top 5 Lowest Selling Products"
+                items={lowestSellingItems}
+                emptyMessage="No low selling products data yet."
              />
           </div>
-        </section>
+      </section>
 
-        {/* Alerts Section */}
+      {alerts.length > 0 && (
         <section className={styles.section}>
           <h2 className={styles.sectionTitle}>Alerts</h2>
-           <div className={styles.alertsContainer}>
-             {alerts.length > 0 ? (
-                 alerts.map((alert, index) => (
-                     <div key={index} className={styles.alertItem}>{alert}</div>
-                 ))
-             ) : (
-                 <p className={styles.placeholderText}>No current alerts.</p>
-             )}
-           </div>
+          <div className={styles.alertsContainer}>
+            {alerts.map((alert, index) => (
+              <Alert
+                key={alert.productId || index} // Prefer unique ID if available
+                type={alert.type === 'OutOfStock' ? 'error' : (alert.type === 'LowStock' ? 'warning' : 'info')}
+                message={alert.message}
+              />
+            ))}
+          </div>
         </section>
-      </div>
-    // </MainLayout>
+      )}
+
+       {recentInvoices.length > 0 && (
+            <section className={styles.section}>
+                <h2 className={styles.sectionTitle}>Recent Invoices</h2>
+                <ul className={styles.recentInvoicesList}>
+                    {recentInvoices.map(inv => (
+                        <li key={inv._id || inv.invoiceNumber}>
+                           <Link to={`/invoices/${inv._id}`} className={styles.infoListLink}>{inv.invoiceNumber}</Link>
+                           <span> - {inv.customerName}</span>
+                           <span> - {formatDate(inv.createdAt)}</span>
+                           <span> - {formatCurrency(inv.grandTotal)}</span>
+                        </li>
+                    ))}
+                </ul>
+            </section>
+        )}
+
+      <section className={styles.section}>
+        <h2 className={styles.sectionTitle}>Sales Overview</h2>
+        <p className={styles.placeholderText}>
+            [Main sales trend chart and other key visualizations will appear here - <Link to="/analytics" className={styles.infoListLink}>View Full Analytics</Link>.]
+        </p>
+      </section>
+    </div>
   );
 };
 

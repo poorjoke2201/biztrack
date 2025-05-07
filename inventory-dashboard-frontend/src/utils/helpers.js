@@ -1,61 +1,108 @@
 // src/utils/helpers.js
 
 /**
- * Formats a date string into a more readable format.
- * @param {string | Date | null | undefined} dateString - The date string or Date object to format.
- * @param {object} options - Intl.DateTimeFormat options (optional).
- * @returns {string} - Formatted date string or 'N/A'.
+ * Format a number as currency (USD by default)
+ * @param {number} amount - The amount to format
+ * @param {string} currencyCode - ISO currency code
+ * @returns {string} Formatted currency string
  */
-export const formatDate = (dateString, options = { year: 'numeric', month: 'numeric', day: 'numeric' }) => {
-  if (!dateString) return 'N/A';
+export const formatCurrency = (amount, currencyCode = 'USD') => {
+  if (amount === null || amount === undefined) return 'N/A';
+  
   try {
-      // Create date object once
-      const date = new Date(dateString);
-      // Check if the date object is valid
-      if (isNaN(date.getTime())) {
-          return 'Invalid Date';
-      }
-      return new Intl.DateTimeFormat('en-US', options).format(date);
-  } catch (e) {
-      console.error("Date formatting error:", e);
-      return 'Invalid Date';
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: currencyCode,
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    }).format(amount);
+  } catch (error) {
+    console.error('Error formatting currency:', error);
+    return `$${parseFloat(amount).toFixed(2)}`;
   }
 };
 
 /**
-* Capitalizes the first letter of a string.
-* @param {string | null | undefined} str - The string to capitalize.
-* @returns {string} - Capitalized string or empty string.
-*/
-export const capitalize = (str) => {
-  if (!str) return ''; // Return empty string if input is falsy
-  return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+ * Format a date string or timestamp
+ * @param {string|Date} date - Date to format
+ * @param {string} format - Optional format (currently unused, placeholder for future)
+ * @returns {string} Formatted date string
+ */
+export const formatDate = (date, format = 'default') => {
+  if (!date) return 'N/A';
+  
+  try {
+    const dateObj = typeof date === 'string' ? new Date(date) : date;
+    
+    if (isNaN(dateObj.getTime())) {
+      return 'Invalid Date';
+    }
+    
+    // Could extend with different format options in the future
+    return dateObj.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short', 
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  } catch (error) {
+    console.error('Error formatting date:', error);
+    return String(date);
+  }
 };
 
 /**
-* Formats a number as Indian Rupee currency.
-* @param {number|string|null|undefined} amount - The numeric value to format.
-* @param {string} currency - Currency code (default: 'INR').
-* @param {string} locale - Locale for formatting (default: 'en-IN').
-* @returns {string} - Formatted currency string or 'N/A'.
-*/
-export const formatCurrency = (amount, currency = 'INR', locale = 'en-IN') => { // *** ENSURE THIS IS EXPORTED ***
-   const numberAmount = Number(amount);
-   if (amount === null || amount === undefined || isNaN(numberAmount)) {
-       return 'N/A';
-   }
-   try {
-      return new Intl.NumberFormat(locale, {
-          style: 'currency',
-          currency: currency,
-          minimumFractionDigits: 2,
-          maximumFractionDigits: 2
-      }).format(numberAmount);
-   } catch (e) {
-       console.error("Currency formatting error:", e);
-       // Provide a basic fallback if Intl fails
-       return `₹${numberAmount.toFixed(2)}`;
-   }
+ * Truncate text to specified length with ellipsis
+ * @param {string} text - Text to truncate
+ * @param {number} maxLength - Maximum length
+ * @returns {string} Truncated text
+ */
+export const truncateText = (text, maxLength = 100) => {
+  if (!text) return '';
+  if (text.length <= maxLength) return text;
+  return text.substring(0, maxLength) + '...';
 };
 
-// Add more helper functions as needed
+/**
+ * Calculate percentage change between two numbers
+ * @param {number} oldValue - Previous value
+ * @param {number} newValue - Current value
+ * @returns {number} Percentage change
+ */
+export const calculatePercentageChange = (oldValue, newValue) => {
+  if (oldValue === 0) return newValue > 0 ? 100 : 0;
+  return ((newValue - oldValue) / Math.abs(oldValue)) * 100;
+};
+
+/**
+ * Format a percentage number
+ * @param {number} value - Value to format as percentage
+ * @param {number} decimals - Number of decimal places
+ * @returns {string} Formatted percentage
+ */
+export const formatPercentage = (value, decimals = 1) => {
+  if (value === null || value === undefined || isNaN(value)) return 'N/A';
+  return `${value.toFixed(decimals)}%`;
+};
+
+/**
+ * Generate a unique ID (not cryptographically secure)
+ * @returns {string} Unique ID
+ */
+export const generateUniqueId = () => {
+  return Date.now().toString(36) + Math.random().toString(36).substring(2);
+};
+
+/**
+ * Capitalize the first letter of each word in a string
+ * @param {string} text - Text to capitalize
+ * @returns {string} Capitalized text
+ */
+export const capitalizeWords = (text) => {
+  if (!text) return '';
+  return text
+    .split(' ')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(' ');
+};

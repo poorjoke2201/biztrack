@@ -1,18 +1,14 @@
 // src/pages/products/ViewInventoryPage.js
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
-// Import components (adjust paths if needed)
+import { useNavigate, Link } from 'react-router-dom'; // *** IMPORT Link ***
 import SearchBar from '../../components/SearchBar/SearchBar';
 import Table from '../../components/Table/Table';
 import Spinner from '../../components/Spinner/Spinner';
 import Alert from '../../components/Alert/Alert';
 import Button from '../../components/Button/Button';
-// Import services
 import { getAllProducts, deleteProduct } from '../../services/productService';
 import { getAllCategories } from '../../services/categoryService';
-// Import CSS module
 import styles from './ViewInventoryPage.module.css';
-// Import helpers (if created)
 import { formatCurrency } from '../../utils/helpers'; // Assuming helpers exist
 
 const ViewInventoryPage = () => {
@@ -27,103 +23,85 @@ const ViewInventoryPage = () => {
   const [actionSuccess, setActionSuccess] = useState(null);
   const navigate = useNavigate();
 
-  // --- Fetching Logic ---
   const fetchData = useCallback(async () => {
-    console.log("Attempting to fetch products and categories...");
-    setLoading(true);
-    setLoadingCategories(true);
-    setError(null);
-    setActionError(null);
-    setActionSuccess(null);
+    setLoading(true); setLoadingCategories(true); setError(null);
+    setActionError(null); setActionSuccess(null);
     try {
-      const [productsData, categoriesData] = await Promise.all([
-        getAllProducts(),
-        getAllCategories()
-      ]);
-      if (Array.isArray(productsData)) setProducts(productsData);
-      else throw new Error('Invalid product data format received.');
-      if (Array.isArray(categoriesData)) setCategories([{ _id: 'All', name: 'All Categories' }, ...categoriesData]);
-      else setCategories([{ _id: 'All', name: 'All Categories' }]);
+      const [productsData, categoriesData] = await Promise.all([getAllProducts(), getAllCategories()]);
+      if (Array.isArray(productsData)) setProducts(productsData); else throw new Error('Invalid product data');
+      if (Array.isArray(categoriesData)) setCategories([{ _id: 'All', name: 'All Categories' }, ...categoriesData]); else setCategories([{ _id: 'All', name: 'All Categories' }]);
     } catch (err) {
-      console.error('Error fetching inventory data:', err);
-      const message = err.response?.data?.message || err.message || 'Failed to load inventory data.';
-      setError(message);
-      setProducts([]);
-      setCategories([{ _id: 'All', name: 'All Categories' }]);
-    } finally {
-      setLoading(false);
-      setLoadingCategories(false);
-    }
-  }, []); // No dependencies needed here
+      const message = err.response?.data?.message || err.message || 'Failed to load data.';
+      setError(message); setProducts([]); setCategories([{ _id: 'All', name: 'All Categories' }]);
+    } finally { setLoading(false); setLoadingCategories(false); }
+  }, []);
 
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+  useEffect(() => { fetchData(); }, [fetchData]);
 
-  // --- Filter Logic ---
   const filteredProducts = useMemo(() => {
-    // ... (filtering logic remains the same) ...
-    const lowerCaseSearchTerm = searchTerm.toLowerCase();
-    return products.filter(product => {
-       if (!product) return false;
-       const categoryFilterMatch = selectedCategoryId === 'All' || product.category?._id === selectedCategoryId;
-       const searchFilterMatch = !searchTerm || (
-         (product.name && product.name.toLowerCase().includes(lowerCaseSearchTerm)) ||
-         (product.sku && product.sku.toLowerCase().includes(lowerCaseSearchTerm)) ||
-         (product.category?.name && product.category.name.toLowerCase().includes(lowerCaseSearchTerm)) ||
-         (product.sellingPrice != null && product.sellingPrice.toString().includes(lowerCaseSearchTerm)) ||
-         (product.currentStock != null && product.currentStock.toString().includes(lowerCaseSearchTerm)) ||
-         (product._id && product._id.toLowerCase().includes(lowerCaseSearchTerm))
-       );
-       return categoryFilterMatch && searchFilterMatch;
-     });
+    const lowerTerm = searchTerm.toLowerCase();
+    if (!searchTerm.trim() && selectedCategoryId === 'All') return products;
+    return products.filter(p => {
+      if (!p) return false;
+      const catMatch = selectedCategoryId === 'All' || p.category?._id === selectedCategoryId;
+      const searchMatch = !searchTerm.trim() || (
+        (p.name?.toLowerCase().includes(lowerTerm)) ||
+        (p.sku?.toLowerCase().includes(lowerTerm)) ||
+        (p.category?.name?.toLowerCase().includes(lowerTerm))
+        // Removed price/stock string search for simplicity, can be added back if needed
+      );
+      return catMatch && searchMatch;
+    });
   }, [products, searchTerm, selectedCategoryId]);
 
-  // --- Wrap handlers used in columns with useCallback ---
   const handleEdit = useCallback((productId) => {
-    const targetPath = `/edit-product/${productId}`;
-    console.log(`Navigating to: ${targetPath}`);
-    navigate(targetPath);
+    navigate(`/edit-product/${productId}`);
   }, [navigate]);
 
   const handleDelete = useCallback(async (productId, productName) => {
-    setActionError(null);
-    setActionSuccess(null);
-    if (window.confirm(`Are you sure you want to delete product "${productName}"? This cannot be undone.`)) {
+    if (window.confirm(`Are you sure you want to delete product "${productName}"?`)) {
+      setActionError(null); setActionSuccess('');
       try {
         const response = await deleteProduct(productId);
-        setActionSuccess(response.message || `Product "${productName}" deleted.`);
-        fetchData(); // Refresh list
+        setActionSuccess(response.message || `Product "${productName}" deleted successfully.`);
+        fetchData();
       } catch (err) {
-        const message = err.response?.data?.message || err.message || 'Could not delete product.';
-        setActionError(message);
+        setActionError(err.response?.data?.message || 'Could not delete product.');
       }
     }
-  }, [fetchData]); // Dependency: fetchData
+  }, [fetchData]);
 
-  // --- Define Columns with memoized handlers ---
   const productColumns = useMemo(() => [
     { header: 'SKU', key: 'sku' },
     { header: 'Name', key: 'name' },
     { header: 'Category', key: 'category', render: (p) => p.category?.name || 'N/A' },
-    { header: 'Selling Price', key: 'sellingPrice', format: (v) => formatCurrency(v) }, // Use helper
+    { header: 'Selling Price', key: 'sellingPrice', format: (v) => formatCurrency(v) },
     { header: 'Stock', key: 'currentStock', render: (p) => (
         <span className={ p.currentStock <= 0 ? styles.outOfStock : p.currentStock <= p.lowStockThreshold ? styles.lowStock : '' }>
             {p.currentStock ?? 'N/A'}
         </span>
       )
     },
-    { header: 'Actions', key: 'actions', render: (p) => (
+    {
+      header: 'Actions',
+      key: 'actions',
+      render: (product) => (
         <div className={styles.actionButtonsContainer}>
-          {/* Call memoized handlers */}
-          <Button size="small" onClick={() => handleEdit(p._id)}>Edit</Button>
-          <Button size="small" variant="danger" onClick={() => handleDelete(p._id, p.name)}>Delete</Button>
+          {/* Use Link for "Info" button, styled as a button */}
+          <Link to={`/products/${product._id}`} className={`${styles.actionButton} ${styles.infoButton}`} title="View Details">
+            Info
+          </Link>
+          <Button size="small" onClick={() => handleEdit(product._id)} title="Edit Product">
+            Edit
+          </Button>
+          <Button size="small" variant="danger" onClick={() => handleDelete(product._id, product.name)} title="Delete Product">
+            Delete
+          </Button>
         </div>
       ),
     },
-  ], [handleEdit, handleDelete, formatCurrency]); // <-- Add handlers as dependencies, also helper if used directly
+  ], [handleEdit, handleDelete]); // formatCurrency removed as per ESLint, used in format directly
 
-  // --- Render Logic ---
   if (loading) return <div className={styles.viewInventoryPage}><h2>View Inventory</h2><Spinner message="Loading inventory..." /></div>;
   if (error) return <div className={styles.viewInventoryPage}><h2>View Inventory</h2><Alert type="error" message={error} /></div>;
 
@@ -131,7 +109,7 @@ const ViewInventoryPage = () => {
     <div className={styles.viewInventoryPage}>
       <h2>View Inventory</h2>
       {actionError && <Alert type="error" message={actionError} onClose={() => setActionError(null)} />}
-      {actionSuccess && <Alert type="success" message={actionSuccess} onClose={() => setActionSuccess(null)} />}
+      {actionSuccess && <Alert type="success" message={actionSuccess} onClose={() => setActionSuccess('')} />}
 
       <div className={styles.filtersContainer}>
         <div className={styles.filterGroup}>
@@ -149,7 +127,7 @@ const ViewInventoryPage = () => {
       <Table columns={productColumns} data={filteredProducts} />
 
       {!loading && filteredProducts.length === 0 && (searchTerm || selectedCategoryId !== 'All') && (<p className={styles.noResults}>No products found matching filters.</p>)}
-      {!loading && products.length === 0 && !error && (<p className={styles.noResults}>Inventory is empty.</p>)}
+      {!loading && products.length === 0 && !error && (<p className={styles.noResults}>Your inventory is currently empty.</p>)}
     </div>
   );
 };
