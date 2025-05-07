@@ -1,65 +1,81 @@
+/* src/components/Navbar/Navbar.module.css */
+
 .navbar {
-  background-color: #333; /* Your existing color */
-  /* -- OR use theme variable: background-color: var(--color-neutral-800, #333); -- */
-  color: white;
-  padding: 0 20px; /* Adjust vertical padding to control height or set fixed height */
-  height: 60px; /* *** EXAMPLE: Set a fixed height *** */
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  position: fixed; /* Make Navbar fixed to the top */
+  justify-content: flex-end; /* Push content to the RIGHT */
+  padding: 0 25px; /* Right padding */
+
+  height: 55px; /* Match sidebar header height */
+  position: fixed;
   top: 0;
-  left: 0;
-  width: 100%;
-  z-index: 1001; /* Higher than sidebar if sidebar is also fixed and meant to be under */
-  box-shadow: var(--shadow-md); /* Optional: add shadow */
-  }
+
+  /* --- Default state (Sidebar EXPANDED) --- */
+  left: 240px; /* Match sidebar width */
+  width: calc(100% - 240px);
   
-  .logo a {
-    color: white;
-    text-decoration: none;
-    font-size: 1.5rem;
-    font-weight: bold;
-  }
-  
-  .navLinks {
-    list-style: none;
+  z-index: 950; /* Below sidebar z-index */
+  background-color: #ffffff;
+  border-bottom: 1px solid #e0e0e0;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  box-sizing: border-box;
+  transition: left 0.3s ease-in-out, width 0.3s ease-in-out;
+}
+
+/* --- Style when Sidebar is Collapsed --- */
+.navbarCollapsed {
+   left: 70px; /* Match collapsed sidebar width */
+   width: calc(100% - 70px);
+}
+
+/* --- Profile Icon Link --- */
+.iconLink {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #4b5563;
+  padding: 0;
+  height: 40px;
+  width: 40px;
+  border-radius: 50%;
+  background-color: transparent;
+  border: 1px solid transparent;
+  transition: background-color 0.2s ease, color 0.2s ease;
+  cursor: pointer;
+  margin-left: auto; /* Helps ensure it stays right with flex-end */
+}
+
+.iconLink:hover {
+  background-color: #f0f0f0;
+  color: #111827;
+}
+
+.iconLink.activeIconLink {
+  background-color: #e0f2f1;
+  color: var(--color-primary, #14B8A6);
+}
+
+.profileIcon {
+  font-size: 2.0rem;
+  display: block;
+}
+
+/* --- Login/Signup Links --- */
+.authLinks {
     display: flex;
     align-items: center;
-    margin: 0;
-    padding: 0;
-  }
-  
-  .navLinks li {
-    margin-left: 20px;
-  }
-  
-  .navLinks li a,
-  .navLinks li button {
-    color: white;
+    gap: 1rem;
+    margin-left: auto; /* Helps ensure it stays right with flex-end */
+}
+.navLink {
+    color: var(--color-text-medium, #4a5568);
     text-decoration: none;
-    font-size: 1rem;
-    cursor: pointer;
-    border: none;
-    background: none;
-    padding: 8px 0;
-  }
-  
-  .navLinks li a:hover,
-  .navLinks li button:hover {
-    color: #ddd;
-  }
-  
-  .logoutButton {
-    padding: 8px 15px;
-    border: 1px solid white;
+    font-weight: 500;
+    padding: 5px 10px;
     border-radius: 4px;
-  }
-  
-  .logoutButton:hover {
-    background-color: #555;
-  }
-  
-  .user {
-    font-size: 1rem;
-  }
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+.navLink:hover {
+    color: var(--color-primary, #14B8A6);
+    background-color: #f3f4f6;
+}

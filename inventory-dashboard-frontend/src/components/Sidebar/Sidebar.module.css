@@ -11,9 +11,9 @@
   display: flex;
   flex-direction: column;
   z-index: 1000;
-  overflow-y: auto;
   border-right: 1px solid #e0e0e0; /* Subtle border */
   transition: width 0.3s ease-in-out;
+  overflow: hidden; /* Hide overflow */
 }
 
 .sidebar.collapsed {
@@ -21,7 +21,7 @@
   align-items: center;
 }
 
-/* Header Section */
+/* Header Section - Fixed */
 .sidebarHeader {
   display: flex;
   align-items: center;
@@ -30,11 +30,14 @@
   width: 100%;
   box-sizing: border-box;
   border-bottom: 1px solid #e0e0e0;
+  height: 55px; /* Fixed height - match navbar height */
+  min-height: 55px; /* Ensure it doesn't shrink */
+  background-color: #ffffff;
 }
 
 .sidebar.collapsed .sidebarHeader {
   justify-content: center;
-   padding: 15px 0;
+  padding: 15px 0;
 }
 
 .logoText {
@@ -56,11 +59,17 @@
   color: var(--color-primary, #14B8A6); /* Use theme color */
 }
 
+/* Navigation Container - Scrollable */
+.navContainer {
+  flex-grow: 1;
+  overflow-y: auto; /* Enable scrolling for navigation */
+  overflow-x: hidden;
+  margin-top: 10px; /* Space after fixed header */
+}
+
 /* Navigation Section */
 .nav {
   width: 100%;
-  margin-top: 10px; /* Reduced top margin */
-  flex-grow: 1;
 }
 
 .nav ul {
@@ -87,7 +96,6 @@
 .sidebar.collapsed .menuHeader {
     display: none;
 }
-
 
 /* Styling for each navigation link */
 .nav li a {
@@ -143,7 +151,6 @@
 .nav li a:hover .icon {
     color: var(--color-primary, #14B8A6); /* Use theme color */
 }
-
 
 /* Active state */
 .nav li a.active {
