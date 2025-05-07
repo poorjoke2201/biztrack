@@ -7,7 +7,7 @@ import DashboardPage from './pages/DashboardPage/DashboardPage';
 import AddProductPage from './pages/AddProductPage/AddProductPage';
 import ViewInventoryPage from './pages/ViewInventoryPage/ViewInventoryPage';
 import EditProductPage from './pages/EditProductPage/EditProductPage';
-import ProductInfoPage from './pages/ProductInfoPage/ProductInfoPage'; // CORRECTED PATH
+import ProductInfoPage from './pages/ProductInfoPage/ProductInfoPage'; // Keep if used
 import DeleteProductPage from './pages/DeleteProductPage/DeleteProductPage';
 import GenerateInvoicePage from './pages/GenerateInvoicePage/GenerateInvoicePage';
 import ViewInvoicesPage from './pages/ViewInvoicesPage/ViewInvoicesPage';
@@ -19,6 +19,8 @@ import AnalyticsPage from './pages/AnalyticsPage/AnalyticsPage';
 import LoginPage from './pages/LoginPage/LoginPage';
 import SignupPage from './pages/SignupPage/SignupPage';
 import ProfilePage from './pages/ProfilePage/ProfilePage';
+// *** IMPORT THE NEW PAGE ***
+import StockPredictionPage from './pages/StockPredictionPage/StockPredictionPage';
 // import NotFoundPage from './pages/NotFoundPage/NotFoundPage';
 
 // --- Import Layout and Routing/Context ---
@@ -28,6 +30,7 @@ import { AuthProvider } from './context/AuthContext';
 
 const App = () => {
   return (
+    // *** Ensure BrowserRouter is the outermost component ***
     <BrowserRouter>
       <AuthProvider>
         <Routes>
@@ -50,8 +53,8 @@ const App = () => {
 
             {/* Product Related Routes */}
             <Route path="view-inventory" element={<ViewInventoryPage />} />
-            {/* Product Info Route with CORRECTED PATH */}
-            <Route path="products/:productId" element={<ProductInfoPage />} />
+            {/* Keep your product info route if you have one */}
+            <Route path="products/:productId" element={<ProductInfoPage />} /> 
 
             {/* Invoice Routes */}
             <Route path="generate-invoice" element={<GenerateInvoicePage />} />
@@ -59,6 +62,7 @@ const App = () => {
             <Route path="invoices/:invoiceId" element={<ViewInvoiceDetailsPage />} />
 
             {/* --- ADMIN ONLY Routes --- */}
+            {/* Wrap individual admin routes with PrivateRoute + requiredRole */}
             <Route path="analytics" element={<PrivateRoute requiredRole="admin"><AnalyticsPage /></PrivateRoute>} />
             <Route path="add-product" element={<PrivateRoute requiredRole="admin"><AddProductPage /></PrivateRoute>} />
             <Route path="edit-product/:productId" element={<PrivateRoute requiredRole="admin"><EditProductPage /></PrivateRoute>} />
@@ -66,6 +70,9 @@ const App = () => {
             <Route path="add-employee" element={<PrivateRoute requiredRole="admin"><AddEmployeePage /></PrivateRoute>} />
             <Route path="view-employees" element={<PrivateRoute requiredRole="admin"><ViewEmployeesPage /></PrivateRoute>} />
             <Route path="edit-employee/:employeeId" element={<PrivateRoute requiredRole="admin"><EditEmployeePage /></PrivateRoute>} />
+
+            {/* *** ADDED STOCK PREDICTION ROUTE (Admin Only Example) *** */}
+            <Route path="stock-prediction" element={<PrivateRoute requiredRole="admin"><StockPredictionPage /></PrivateRoute>} />
             {/* --- End ADMIN ONLY Routes --- */}
 
           </Route> {/* End Protected Routes */}

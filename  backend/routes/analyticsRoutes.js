@@ -1,14 +1,15 @@
-// routes/analyticsRoutes.js (Backend - Complete and Updated with last7DaysSales in dashboard summary)
+// routes/analyticsRoutes.js (Backend)
 const express = require('express');
 const router = express.Router();
 const mongoose = require('mongoose');
-const { protect, admin } = require('../middleware/authMiddleware'); // Assuming path is correct
-const Invoice = require('../models/Invoice'); // Assuming path is correct
-const Product = require('../models/Product'); // Assuming path is correct
+const { protect, admin } = require('../middleware/authMiddleware'); // Adjust path if needed
+const Invoice = require('../models/Invoice'); // Adjust path if needed
+const Product = require('../models/Product'); // Adjust path if needed
 // Remove 'regression' if not used: const regression = require('regression');
 
 // --- Helper: Get Start of Day ---
 const getStartOfDay = (date) => {
+    if (!date || isNaN(new Date(date))) return null; // Handle invalid date input
     const d = new Date(date);
     d.setHours(0, 0, 0, 0);
     return d;
@@ -16,6 +17,7 @@ const getStartOfDay = (date) => {
 
 // --- Helper: Get Start of Month ---
 const getStartOfMonth = (date) => {
+     if (!date || isNaN(new Date(date))) return null;
     const d = new Date(date);
     return new Date(d.getFullYear(), d.getMonth(), 1);
 };
@@ -23,7 +25,7 @@ const getStartOfMonth = (date) => {
 // --- GET DASHBOARD SUMMARY ---
 // @route   GET /api/analytics/dashboard-summary
 // @desc    Get summary data for dashboard cards, lists, and mini sales trend
-// @access  Private (Accessible to logged-in users, typically not admin-only for summary)
+// @access  Private
 router.get('/dashboard-summary', protect, async (req, res) => {
     console.log("GET /api/analytics/dashboard-summary: Request received.");
     try {
@@ -31,37 +33,37 @@ router.get('/dashboard-summary', protect, async (req, res) => {
         const startOfToday = getStartOfDay(today);
         const startOfMonth = getStartOfMonth(today);
         const ninetyDaysAgo = new Date(new Date().setDate(today.getDate() - 90));
-        const sevenDaysAgo = new Date(new Date().setDate(today.getDate() - 7)); // For mini sales trend
+        const sevenDaysAgo = new Date(new Date().setDate(today.getDate() - 7 + 1)); // Start of 7 days ago
 
         // Use Promise.all for concurrent queries
         const [
             totalProductCount,
             outOfStockCount,
-            lowStockProducts, // Fetched for alerts and count
+            lowStockProducts,
             revenueTodayData,
             revenueThisMonthData,
             totalRevenueData,
             topSellingProductsData,
             lowestSellingProductsData,
             recentInvoicesData,
-            last7DaysSalesData // *** Data for dashboard mini chart ***
+            last7DaysSalesData
         ] = await Promise.all([
             Product.countDocuments(),
             Product.countDocuments({ currentStock: { $lte: 0 } }),
             Product.find({
                 $expr: { $lte: ["$currentStock", "$lowStockThreshold"] },
-                currentStock: { $gt: 0 } // Only those actually in stock but low
-            }).limit(10).select('name currentStock lowStockThreshold sku _id'), // Include _id for productId in alert
+                currentStock: { $gt: 0 }
+            }).limit(10).select('name currentStock lowStockThreshold sku _id'),
             Invoice.aggregate([
-                { $match: { createdAt: { $gte: startOfToday }, status: 'Active' } },
+                { $match: { createdAt: { $gte: startOfToday }, status: 'Active' } }, // Match active invoices today
                 { $group: { _id: null, total: { $sum: '$grandTotal' } } }
             ]),
             Invoice.aggregate([
-                { $match: { createdAt: { $gte: startOfMonth }, status: 'Active' } },
+                { $match: { createdAt: { $gte: startOfMonth }, status: 'Active' } }, // Match active invoices this month
                 { $group: { _id: null, total: { $sum: '$grandTotal' } } }
             ]),
             Invoice.aggregate([
-                { $match: { status: 'Active' } },
+                { $match: { status: 'Active' } }, // Match all active invoices
                 { $group: { _id: null, total: { $sum: '$grandTotal' } } }
             ]),
             Invoice.aggregate([ // Top Selling Products
@@ -70,7 +72,7 @@ router.get('/dashboard-summary', protect, async (req, res) => {
                  { $group: { _id: '$items.product', totalQuantity: { $sum: '$items.quantity' } } },
                  { $sort: { totalQuantity: -1 } }, { $limit: 5 },
                  { $lookup: { from: 'products', localField: '_id', foreignField: '_id', as: 'productDetails', pipeline: [ { $project: { name: 1 } } ] } },
-                 { $unwind: '$productDetails' },
+                 { $unwind: { path: "$productDetails", preserveNullAndEmptyArrays: true } }, // Handle if product deleted
                  { $project: { _id: 1, name: '$productDetails.name', quantity: '$totalQuantity' } }
             ]),
             Invoice.aggregate([ // Lowest Selling Products
@@ -79,24 +81,25 @@ router.get('/dashboard-summary', protect, async (req, res) => {
                  { $group: { _id: '$items.product', totalQuantity: { $sum: '$items.quantity' } } },
                  { $sort: { totalQuantity: 1 } }, { $limit: 5 },
                  { $lookup: { from: 'products', localField: '_id', foreignField: '_id', as: 'productDetails', pipeline: [ { $project: { name: 1 } } ] } },
-                 { $unwind: '$productDetails' },
+                 { $unwind: { path: "$productDetails", preserveNullAndEmptyArrays: true } },
                  { $project: { _id: 1, name: '$productDetails.name', quantity: '$totalQuantity' } }
             ]),
             Invoice.find({ status: 'Active' })
                     .sort({createdAt: -1})
-                    .limit(5) // Recent 5 invoices
-                    .select('invoiceNumber customerName createdAt grandTotal _id'), // Select fields
-            // *** Query for Last 7 Days Sales ***
+                    .limit(5)
+                    .select('invoiceNumber customerName createdAt grandTotal _id'),
+            // Query for Last 7 Days Sales
             Invoice.aggregate([
                 { $match: { createdAt: { $gte: sevenDaysAgo }, status: 'Active' } },
                 {
                     $group: {
-                        _id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } }, // Group by day
+                         // Group by date part only
+                        _id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt", timezone: "UTC" } }, // Use UTC or server timezone
                         totalSales: { $sum: '$grandTotal' }
                     }
                 },
-                { $sort: { "_id": 1 } }, // Sort by date
-                { $project: { _id: 0, label: '$_id', sales: '$totalSales' } } // Format for chart
+                { $sort: { "_id": 1 } }, // Sort chronologically
+                { $project: { _id: 0, label: '$_id', sales: '$totalSales' } }
             ])
         ]);
 
@@ -108,31 +111,21 @@ router.get('/dashboard-summary', protect, async (req, res) => {
         // Generate Alerts
         const alerts = [];
         lowStockProducts.forEach(p => {
-            alerts.push({
-                type: 'LowStock',
-                message: `Low stock: ${p.name} (SKU: ${p.sku}) - ${p.currentStock} left (Threshold: ${p.lowStockThreshold})`,
-                productId: p._id
-            });
+            alerts.push({ type: 'LowStock', message: `Low stock: ${p.name} (SKU: ${p.sku}) - ${p.currentStock} left (Threshold: ${p.lowStockThreshold})`, productId: p._id });
         });
-        // Optionally add out-of-stock alerts directly here if `outOfStockCount` isn't enough
         if (outOfStockCount > 0) {
-            const outOfStockProds = await Product.find({ currentStock: { $lte: 0 } }).limit(3).select('name sku _id'); // Get a few examples
-            outOfStockProds.forEach(p => {
-                alerts.push({
-                    type: 'OutOfStock',
-                    message: `${p.name} (SKU: ${p.sku}) is OUT OF STOCK!`,
-                    productId: p._id
-                });
-            });
+            const outOfStockProds = await Product.find({ currentStock: { $lte: 0 } }).limit(3).select('name sku _id');
+            outOfStockProds.forEach(p => { alerts.push({ type: 'OutOfStock', message: `${p.name} (SKU: ${p.sku}) is OUT OF STOCK!`, productId: p._id }); });
         }
+        // Add other alert types (e.g., overdue invoices) here if needed
 
-        console.log("Dashboard Summary - Prepared Data:", { last7DaysSales: last7DaysSalesData });
+        console.log("Dashboard Summary - Prepared Data including last 7 days sales.");
 
         // Send response
         res.json({
             productCount: totalProductCount,
             outOfStockCount: outOfStockCount,
-            lowStockCount: lowStockProducts.length, // Actual count of low stock items found
+            lowStockCount: lowStockProducts.length,
             revenueToday: revenueToday.toFixed(2),
             revenueThisMonth: revenueThisMonth.toFixed(2),
             totalRevenue: totalRevenue.toFixed(2),
@@ -140,7 +133,7 @@ router.get('/dashboard-summary', protect, async (req, res) => {
             lowestSellingProducts: lowestSellingProductsData,
             recentInvoices: recentInvoicesData,
             alerts: alerts,
-            last7DaysSales: last7DaysSalesData // *** Ensure this is included in the response ***
+            last7DaysSales: last7DaysSalesData // Include sales data for dashboard mini-chart
         });
 
     } catch (error) {
@@ -150,65 +143,100 @@ router.get('/dashboard-summary', protect, async (req, res) => {
 });
 
 
-// --- GET DETAILED ANALYTICS PAGE DATA ---
+// --- GET DETAILED ANALYTICS PAGE DATA (MODIFIED FOR DATE RANGE) ---
 // @route   GET /api/analytics/details
-// @desc    Get data for the dedicated Analytics page
-// @access  Private (Consider Admin Only by adding 'admin' middleware)
+// @desc    Get data for the dedicated Analytics page, accepts date range query params for sales trend
+// @access  Private
+// @query   startDate (Optional ISO Date String, e.g., 2024-01-01)
+// @query   endDate (Optional ISO Date String, e.g., 2024-05-31)
 router.get('/details', protect, /* admin, */ async (req, res) => {
-    console.log("GET /api/analytics/details: Request received.");
+    console.log("GET /api/analytics/details: Request received. Query:", req.query);
     try {
         const today = new Date();
-        const twelveMonthsAgo = new Date(new Date().setMonth(today.getMonth() - 12));
-        const ninetyDaysAgo = new Date(new Date().setDate(today.getDate() - 90));
+        const { startDate, endDate } = req.query; // Get date range from query parameters
 
+        // --- Build Date Filter for Sales Trend ---
+        let salesTrendDateFilter = { status: 'Active' }; // Always filter by active status
+
+        const start = startDate ? getStartOfDay(startDate) : null; // Use helper to get start of day
+        // For end date, get the very END of that day for inclusive filtering
+        let end = endDate ? new Date(endDate) : null;
+        if (end && !isNaN(end)) {
+             end.setHours(23, 59, 59, 999); // Set to end of the provided day
+        }
+
+        if (start && !isNaN(start) && end && !isNaN(end)) {
+            salesTrendDateFilter.createdAt = { $gte: start, $lte: end };
+        } else if (start && !isNaN(start)) {
+            salesTrendDateFilter.createdAt = { $gte: start };
+        } else if (end && !isNaN(end)) {
+             salesTrendDateFilter.createdAt = { $lte: end };
+        } else {
+            // Default if no valid range: Last 12 Months
+            const twelveMonthsAgo = new Date(new Date().setMonth(today.getMonth() - 12));
+            salesTrendDateFilter.createdAt = { $gte: twelveMonthsAgo };
+            console.log("Using default 12-month range for sales trend.");
+        }
+        console.log("Sales Trend Date Filter:", JSON.stringify(salesTrendDateFilter));
+        // --- End Date Filter Build ---
+
+        // Define date grouping format based on range duration (example)
+        let groupByFormat = "%Y-%m"; // Default to month
+        let labelFormat = ["", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+        let labelSeparator = " ";
+        let labelYearPart = { $toString: "$_id.year" };
+        let labelMainPart = { $arrayElemAt: [ labelFormat, "$_id.month" ] };
+
+        if (start && end && (end.getTime() - start.getTime()) <= 31 * 24 * 60 * 60 * 1000) { // Approx 1 month or less
+             groupByFormat = "%Y-%m-%d"; // Group by day
+             labelFormat = null; // Use date string directly
+             labelSeparator = "";
+             labelYearPart = "";
+             labelMainPart = "$_id.dateStr"; // Use the date string from group _id
+             console.log("Grouping sales trend by DAY for short range.");
+        } else {
+            console.log("Grouping sales trend by MONTH.");
+        }
+
+
+        // Use Promise.all for concurrent fetching
         const [
             salesTrendData,
             topProductsChartData,
             revenueSummaryData,
-            recentInvoicesTableData,
-            // Example: Sales by Category data
-            // salesByCategoryData
+            recentInvoicesTableData
         ] = await Promise.all([
-            // Sales Trend (Last 12 Months by Month)
+            // *** Sales Trend Aggregation (uses dynamic filter and grouping) ***
             Invoice.aggregate([
-                { $match: { createdAt: { $gte: twelveMonthsAgo }, status: 'Active' } },
+                { $match: salesTrendDateFilter },
                 { $group: {
-                    _id: { year: { $year: "$createdAt" }, month: { $month: "$createdAt" } },
+                    // Grouping depends on calculated format
+                    _id: groupByFormat === "%Y-%m-%d" ?
+                        { dateStr: { $dateToString: { format: groupByFormat, date: "$createdAt", timezone: "UTC" } } } : // Group by date string for daily
+                        { year: { $year: "$createdAt" }, month: { $month: "$createdAt" } }, // Group by year/month
                     totalSales: { $sum: "$grandTotal" }
                 }},
-                { $sort: { "_id.year": 1, "_id.month": 1 } },
+                // Sort by year/month or date string
+                { $sort: groupByFormat === "%Y-%m-%d" ? { "_id.dateStr": 1 } : { "_id.year": 1, "_id.month": 1 } },
                 { $project: {
                      _id: 0,
-                     label: { $concat: [ { $arrayElemAt: [ ["", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"], "$_id.month" ] }, " ", { $toString: "$_id.year" } ] },
+                     // Construct label based on grouping
+                     label: labelFormat ?
+                           { $concat: [ labelMainPart, labelSeparator, labelYearPart ] } :
+                           labelMainPart, // Just use date string if daily
                      sales: "$totalSales"
                  }}
             ]),
-            // Top 5 Products Chart Data (Units, Last 90 days)
-            Invoice.aggregate([
-                 { $match: { createdAt: { $gte: ninetyDaysAgo }, status: 'Active' } },
-                 { $unwind: '$items' },
-                 { $group: { _id: '$items.product', totalQuantity: { $sum: '$items.quantity' } } },
-                 { $sort: { totalQuantity: -1 } }, { $limit: 5 },
-                 { $lookup: { from: 'products', localField: '_id', foreignField: '_id', as: 'productInfo', pipeline: [ { $project: { name: 1, sku: 1 } } ] } },
-                 { $unwind: '$productInfo' },
-                 { $project: { _id: 0, name: '$productInfo.name', quantitySold: '$totalQuantity' } }
+            // --- Other aggregations remain the same ---
+            Invoice.aggregate([ // Top Products (fixed 90 days)
+                 { $match: { createdAt: { $gte: new Date(new Date().setDate(today.getDate() - 90)) }, status: 'Active' } },
+                 { $unwind: '$items' }, { $group: { _id: '$items.product', totalQuantity: { $sum: '$items.quantity' } } }, { $sort: { totalQuantity: -1 } }, { $limit: 5 }, { $lookup: { from: 'products', localField: '_id', foreignField: '_id', as: 'productInfo', pipeline: [ { $project: { name: 1, sku: 1 } } ] } }, { $unwind: { path: "$productInfo", preserveNullAndEmptyArrays: true } }, { $project: { _id: 0, name: '$productInfo.name', quantitySold: '$totalQuantity' } }
             ]),
-            // Revenue Summary (Same logic as dashboard, could be a shared helper)
-             Invoice.aggregate([
-                { $match: { status: 'Active' } },
-                { $group: {
-                    _id: null,
-                    revenueToday: { $sum: { $cond: [ { $gte: ["$createdAt", getStartOfDay(today)] }, "$grandTotal", 0 ] } },
-                    revenueThisMonth: { $sum: { $cond: [ { $gte: ["$createdAt", getStartOfMonth(today)] }, "$grandTotal", 0 ] } },
-                    totalRevenue: { $sum: "$grandTotal" }
-                }},
-                 { $project: { _id: 0 } }
+            Invoice.aggregate([ // Revenue Summary
+                { $match: { status: 'Active' } }, { $group: { _id: null, revenueToday: { $sum: { $cond: [ { $gte: ["$createdAt", getStartOfDay(today)] }, "$grandTotal", 0 ] } }, revenueThisMonth: { $sum: { $cond: [ { $gte: ["$createdAt", getStartOfMonth(today)] }, "$grandTotal", 0 ] } }, totalRevenue: { $sum: "$grandTotal" } }}, { $project: { _id: 0 } }
             ]),
-            // Recent Invoices Table Data (More items for details page)
-            Invoice.find({ status: 'Active' })
-                    .sort({createdAt: -1})
-                    .limit(20) // Fetch more for a table
-                    .populate('createdBy', 'name')
+            Invoice.find({ status: 'Active' }) // Recent Invoices
+                    .sort({createdAt: -1}).limit(20).populate('createdBy', 'name')
                     .select('invoiceNumber customerName createdAt grandTotal createdBy _id')
         ]);
 
@@ -219,7 +247,7 @@ router.get('/details', protect, /* admin, */ async (req, res) => {
             topProductsChart: topProductsChartData,
             revenueSummary: {
                 today: Number(summary.revenueToday).toFixed(2),
-                thisMonth: Number(summary.revenueThisMonth).toFixed(2),
+                thisMonth: Number(summary.thisMonth).toFixed(2),
                 allTime: Number(summary.totalRevenue).toFixed(2),
             },
             recentInvoices: recentInvoicesTableData
@@ -230,7 +258,6 @@ router.get('/details', protect, /* admin, */ async (req, res) => {
         res.status(500).json({ message: 'Server error fetching detailed analytics' });
     }
 });
-
 
 // --- GET LOW STOCK PREDICTION ---
 // @route   GET /api/analytics/low-stock-prediction/:productId
@@ -266,5 +293,4 @@ router.get('/low-stock-prediction/:productId', protect, async (req, res) => {
         res.status(500).json({ message: 'Server error during low stock prediction' });
     }
 });
-
 module.exports = router;
