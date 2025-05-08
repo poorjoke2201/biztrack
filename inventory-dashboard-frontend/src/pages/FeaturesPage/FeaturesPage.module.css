@@ -1,0 +1,50 @@
+/* inventory-dashboard-frontend/src/pages/FeaturesPage/FeaturesPage.module.css */
+
+/* Example for custom animation if not using Tailwind's config */
+/*
+.heroHeadline {
+  animation: typewriter 2s steps(40) 1s 1 normal both,
+             blinkTextCursor 500ms steps(40) infinite normal;
+  white-space: nowrap;
+  overflow: hidden;
+  border-right: 3px solid rgba(255,255,255,.75);
+}
+
+@keyframes typewriter {
+  from { width: 0; }
+  to { width: 100%; }
+}
+
+@keyframes blinkTextCursor {
+  from { border-right-color: rgba(255,255,255,.75); }
+  to { border-right-color: transparent; }
+}
+
+.fadeIn {
+  animation: fadeInAnimation 1.5s ease-in-out forwards;
+  opacity: 0;
+  animation-delay: 3s; // Delay until after typewriter
+}
+
+@keyframes fadeInAnimation {
+  to { opacity: 1; }
+}
+*/
+
+/* Example of a shine animation for the logo text */
+@keyframes shine {
+    0% { background-position: -200% center; }
+    100% { background-position: 200% center; }
+  }
+  
+  /* Add to tailwind.config.js if you prefer there */
+  .animation-delay-2s {
+    animation-delay: 2s;
+  }
+  
+  /* For text with gradient, ensure background-clip and text-fill-color are applied */
+  .text-gradient-orange-pink {
+    background: linear-gradient(90deg, theme('colors.orange.500'), theme('colors.pink.500'));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }

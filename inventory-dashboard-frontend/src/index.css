@@ -1,61 +1,126 @@
 /* src/index.css */
 
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* --- KEEP ALL YOUR EXISTING CSS BELOW THIS LINE --- */
+/* src/index.css */
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* --- Your existing :root variables can stay --- */
+:root {
+  /* ... keep your variables ... */
+  --font-family-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', /* Example using Inter */
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+}
+
+/* --- Global Resets & Body Styles --- */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-family-sans); /* Use variable for font */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  /* --- Set default dark background and text color --- */
+  background-color: #111827; /* Match background-dark */
+  color: #E5E7EB; /* Match text-main */
+  line-height: 1.6;
+}
+
+
 /* Add this :root block */
 :root {
   /* --- Primary Colors --- */
-  --color-primary: #14B8A6; /* Teal - Your current primary */
-  /* --color-primary: #22C55E; */ /* Alternative Green */
-  --color-primary-light: #A7F3D0;  /* Lighter shade for hover/accents */
-  --color-primary-dark: #0F766E;   /* Darker shade for active/borders */
+  --color-primary: #14B8A6;
+  /* Teal - Your current primary */
+  /* --color-primary: #22C55E; */
+  /* Alternative Green */
+  --color-primary-light: #A7F3D0;
+  /* Lighter shade for hover/accents */
+  --color-primary-dark: #0F766E;
+  /* Darker shade for active/borders */
 
   /* --- Secondary/Neutral Colors --- */
-  --color-secondary: #64748B;   /* Slate Gray - For secondary buttons, muted text */
+  --color-secondary: #64748B;
+  /* Slate Gray - For secondary buttons, muted text */
   --color-secondary-light: #94A3B8;
   --color-secondary-dark: #475569;
 
   /* --- Background Colors --- */
-  --color-background-body: #F3F4F6;  /* Light Gray page background */
-  --color-background-alt: #FFFFFF;   /* White for cards, modals, primary content areas */
-  --color-background-input: #F9FAFB; /* Slightly off-white for inputs */
-  --color-background-disabled: #E5E7EB; /* For disabled elements */
+  --color-background-body: #F3F4F6;
+  /* Light Gray page background */
+  --color-background-alt: #FFFFFF;
+  /* White for cards, modals, primary content areas */
+  --color-background-input: #F9FAFB;
+  /* Slightly off-white for inputs */
+  --color-background-disabled: #E5E7EB;
+  /* For disabled elements */
 
   /* --- Text Colors --- */
-  --color-text-dark: #1F2937;   /* Charcoal gray - Primary text */
-  --color-text-medium: #4B5563; /* Medium gray - Secondary text, labels */
-  --color-text-light: #9CA3AF;  /* Lighter gray - Placeholder text, tertiary info */
-  --color-text-muted: #6c757d;  /* Muted text for less emphasis */
-  --color-text-on-primary: #FFFFFF; /* Text color for on primary background */
-  --color-text-on-danger: #FFFFFF;  /* Text color for on danger background */
+  --color-text-dark: #1F2937;
+  /* Charcoal gray - Primary text */
+  --color-text-medium: #4B5563;
+  /* Medium gray - Secondary text, labels */
+  --color-text-light: #9CA3AF;
+  /* Lighter gray - Placeholder text, tertiary info */
+  --color-text-muted: #6c757d;
+  /* Muted text for less emphasis */
+  --color-text-on-primary: #FFFFFF;
+  /* Text color for on primary background */
+  --color-text-on-danger: #FFFFFF;
+  /* Text color for on danger background */
 
   /* --- Border Colors --- */
-  --color-border: #D1D5DB;         /* Default border color */
-  --color-border-light: #E5E7EB;   /* Lighter border for separators */
-  --color-border-focus: var(--color-primary); /* Border color on input focus */
+  --color-border: #D1D5DB;
+  /* Default border color */
+  --color-border-light: #E5E7EB;
+  /* Lighter border for separators */
+  --color-border-focus: var(--color-primary);
+  /* Border color on input focus */
 
   /* --- Semantic/Accent Colors --- */
-  --color-danger: #EF4444;        /* Red - For errors, delete actions */
+  --color-danger: #EF4444;
+  /* Red - For errors, delete actions */
   --color-danger-light: #FEE2E2;
   --color-danger-dark: #B91C1C;
 
-  --color-success: #10B981;      /* Green - For success messages */
+  --color-success: #10B981;
+  /* Green - For success messages */
   --color-success-light: #D1FAE5;
   --color-success-dark: #047857;
 
-  --color-warning: #F59E0B;      /* Amber/Yellow - For warnings */
-  --color-warning-bg: #FEF3C7;   /* Your existing warning background */
-  --color-warning-text: #92400E;  /* Your existing warning text */
-  --color-warning-border: #FCD34D;/* Your existing warning border */
+  --color-warning: #F59E0B;
+  /* Amber/Yellow - For warnings */
+  --color-warning-bg: #FEF3C7;
+  /* Your existing warning background */
+  --color-warning-text: #92400E;
+  /* Your existing warning text */
+  --color-warning-border: #FCD34D;
+  /* Your existing warning border */
 
-  --color-info: #3B82F6;         /* Blue - For informational messages */
+  --color-info: #3B82F6;
+  /* Blue - For informational messages */
   --color-info-light: #DBEAFE;
   --color-info-dark: #1D4ED8;
 
 
   /* --- Sizing & Spacing --- */
   --border-radius-sm: 4px;
-  --border-radius: 6px;        /* Default border radius */
+  --border-radius: 6px;
+  /* Default border radius */
   --border-radius-md: 8px;
-  --border-radius-lg: 12px;      /* Larger border radius for cards */
+  --border-radius-lg: 12px;
+  /* Larger border radius for cards */
 
   /* --- Shadows --- */
   --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
@@ -76,17 +141,22 @@
 *,
 *::before,
 *::after {
-  box-sizing: border-box; /* More intuitive box model */
+  box-sizing: border-box;
+  /* More intuitive box model */
 }
 
 body {
   margin: 0;
-  font-family: var(--font-family-sans); /* Use variable for font */
+  font-family: var(--font-family-sans);
+  /* Use variable for font */
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background-color: var(--color-background-body); /* Use variable */
-  color: var(--color-text-dark); /* Default text color */
-  line-height: 1.6; /* Improved readability */
+  background-color: var(--color-background-body);
+  /* Use variable */
+  color: var(--color-text-dark);
+  /* Default text color */
+  line-height: 1.6;
+  /* Improved readability */
 }
 
 /* Optional: Basic link styling */
@@ -94,6 +164,7 @@ a {
   color: var(--color-primary-dark);
   text-decoration: none;
 }
+
 a:hover {
   text-decoration: underline;
   color: var(--color-primary);
@@ -109,7 +180,8 @@ a:hover {
 
 /* Your existing html, code block styles can remain here if any */
 html {
-  font-size: 16px; /* Base font size */
+  font-size: 16px;
+  /* Base font size */
 }
 
 code {
