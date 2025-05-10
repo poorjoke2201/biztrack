@@ -1,4 +1,4 @@
-// src/pages/ProductInfoPage/ProductInfoPage.js
+
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
@@ -16,7 +16,7 @@ const ProductInfoPage = () => {
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  
+
   useEffect(() => {
     const fetchProductData = async () => {
       if (!productId) {
@@ -24,31 +24,36 @@ const ProductInfoPage = () => {
         setLoading(false);
         return;
       }
-      
+      setLoading(true); // Set loading true before fetch attempt
+      setError(null);   // Clear previous errors
       try {
-        setLoading(true);
         const data = await getProductById(productId);
-        console.log('Fetched product data:', data);
-        setProduct(data);
-        setLoading(false);
+        // console.log('Fetched product data:', data); // For debugging
+        if (data) { // Check if data is not null/undefined
+          setProduct(data);
+        } else {
+          setError(`Product with ID ${productId} not found.`); // Handle case where API returns null/undefined
+        }
       } catch (err) {
         console.error('Error fetching product:', err);
         setError(err.response?.data?.message || 'Failed to load product information');
+      } finally {
         setLoading(false);
       }
     };
-    
+
     fetchProductData();
   }, [productId]);
-  
+
   const handleBackToInventory = () => {
-    navigate('/view-inventory');
+    // **** UPDATED NAVIGATION PATH ****
+    navigate('/app/view-inventory');
   };
 
   if (loading) return <div className={styles.productInfoPage}><Spinner message="Loading product information..." /></div>;
   if (error) return <div className={styles.productInfoPage}><Alert type="error" message={error} /></div>;
-  if (!product) return <div className={styles.productInfoPage}><Alert type="warning" message="Product not found" /></div>;
-  
+  if (!product) return <div className={styles.productInfoPage}><Alert type="warning" message={`Product with ID ${productId} not found or data is invalid.`} /></div>;
+
   return (
     <div className={styles.productInfoPage}>
       <div className={styles.header}>
@@ -56,13 +61,14 @@ const ProductInfoPage = () => {
         <div className={styles.headerActions}>
           <Button onClick={handleBackToInventory} variant="secondary">Back to Inventory</Button>
           {user?.role === 'admin' && (
-            <Button onClick={() => navigate(`/edit-product/${product._id}`)}>
+            // **** UPDATED NAVIGATION PATH ****
+            <Button onClick={() => navigate(`/app/edit-product/${product._id}`)}>
               Edit Product
             </Button>
           )}
         </div>
       </div>
-      
+
       <div className={styles.productContent}>
         <div className={styles.mainInfo}>
           <div className={styles.infoCard}>
@@ -87,7 +93,7 @@ const ProductInfoPage = () => {
               <div className={styles.infoItem}>
                 <span className={styles.label}>Current Stock:</span>
                 <span className={`${styles.value} ${
-                  product.currentStock <= 0 ? styles.outOfStock : 
+                  product.currentStock <= 0 ? styles.outOfStock :
                   product.currentStock <= product.lowStockThreshold ? styles.lowStock : ''
                 }`}>
                   {product.currentStock}
@@ -107,7 +113,7 @@ const ProductInfoPage = () => {
               </div>
             </div>
           </div>
-          
+
           {product.description && (
             <div className={styles.infoCard}>
               <h2>Description</h2>
@@ -115,17 +121,17 @@ const ProductInfoPage = () => {
             </div>
           )}
         </div>
-        
+
         <div className={styles.sideInfo}>
           <div className={styles.infoCard}>
             <h2>Inventory Status</h2>
             <div className={`${styles.statusIndicator} ${
-              product.currentStock <= 0 ? styles.outOfStockIndicator : 
-              product.currentStock <= product.lowStockThreshold ? styles.lowStockIndicator : 
+              product.currentStock <= 0 ? styles.outOfStockIndicator :
+              product.currentStock <= product.lowStockThreshold ? styles.lowStockIndicator :
               styles.inStockIndicator
             }`}>
-              {product.currentStock <= 0 ? 'Out of Stock' : 
-               product.currentStock <= product.lowStockThreshold ? 'Low Stock' : 
+              {product.currentStock <= 0 ? 'Out of Stock' :
+               product.currentStock <= product.lowStockThreshold ? 'Low Stock' :
                'In Stock'}
             </div>
           </div>
@@ -134,9 +140,10 @@ const ProductInfoPage = () => {
             <div className={styles.infoCard}>
               <h2>Admin Actions</h2>
               <div className={styles.adminActions}>
-                <Button 
-                  onClick={() => navigate(`/edit-product/${product._id}`)}
-                  fullWidth
+                {/* **** UPDATED NAVIGATION PATH **** */}
+                <Button
+                  onClick={() => navigate(`/app/edit-product/${product._id}`)}
+                  // fullWidth // Assuming fullWidth is a prop for your Button component
                 >
                   Edit Product
                 </Button>

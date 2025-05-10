@@ -1,4 +1,3 @@
-// src/pages/ViewInvoicesPage/ViewInvoicesPage.js
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import SearchBar from '../../components/SearchBar/SearchBar';
@@ -13,23 +12,19 @@ import { formatDate, formatCurrency } from '../../utils/helpers';
 const ViewInvoicesPage = () => {
   const [invoices, setInvoices] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
-  const [loading, setLoading] = useState(true); // Only need one loading state
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [actionError, setActionError] = useState(null);
-  const [actionSuccess, setActionSuccess] = useState(null);
+  const [actionSuccess, setActionSuccess] = useState(null); // Not used in this version but kept for consistency
   const navigate = useNavigate();
 
-  // Fetching Logic
   const fetchData = useCallback(async () => {
-    console.log("Attempting to fetch invoices...");
-    setLoading(true); // Set main loading true
+    setLoading(true);
     setError(null);
     setActionError(null);
-    setActionSuccess(null);
+    setActionSuccess(null); // Reset success message
     try {
-      // Only fetch invoices here
       const data = await getAllInvoices();
-      console.log("Invoices data received:", data);
       if (Array.isArray(data)) {
         setInvoices(data);
       } else {
@@ -42,44 +37,48 @@ const ViewInvoicesPage = () => {
       setError(message);
       setInvoices([]);
     } finally {
-      setLoading(false); // Set main loading false
+      setLoading(false);
     }
-  }, []); // No dependencies needed
+  }, []);
 
   useEffect(() => {
     fetchData();
   }, [fetchData]);
 
-  // Filter Logic (remains the same)
   const filteredInvoices = useMemo(() => {
     const lowerCaseSearchTerm = searchTerm.toLowerCase();
-    if (!searchTerm) return invoices;
+    if (!searchTerm.trim()) return invoices; // Use trim() for search term check
     return invoices.filter(invoice => {
-        if (!invoice) return false;
-        const formattedDate = invoice.createdAt ? formatDate(invoice.createdAt) : '';
-        const customerMatch = invoice.customerName?.toLowerCase().includes(lowerCaseSearchTerm);
-        const invoiceNumberMatch = invoice.invoiceNumber?.toLowerCase().includes(lowerCaseSearchTerm);
-        const dateMatch = formattedDate.includes(lowerCaseSearchTerm);
-        const totalMatch = invoice.grandTotal?.toString().includes(lowerCaseSearchTerm);
-        const cashierMatch = invoice.createdBy?.name?.toLowerCase().includes(lowerCaseSearchTerm);
-        return customerMatch || invoiceNumberMatch || dateMatch || totalMatch || cashierMatch;
+      if (!invoice) return false;
+      const formattedDate = invoice.createdAt ? formatDate(invoice.createdAt) : '';
+      const customerMatch = invoice.customerName?.toLowerCase().includes(lowerCaseSearchTerm);
+      const invoiceNumberMatch = invoice.invoiceNumber?.toLowerCase().includes(lowerCaseSearchTerm);
+      const dateMatch = formattedDate.toLowerCase().includes(lowerCaseSearchTerm); // ensure date match is case-insensitive
+      const totalMatch = invoice.grandTotal?.toString().includes(lowerCaseSearchTerm); // grandTotal likely number
+      const cashierMatch = invoice.createdBy?.name?.toLowerCase().includes(lowerCaseSearchTerm);
+      return customerMatch || invoiceNumberMatch || dateMatch || totalMatch || cashierMatch;
     });
   }, [invoices, searchTerm]);
 
-  // Handlers (remain the same)
   const handleViewDetails = useCallback((invoiceId) => {
-    const targetPath = `/invoices/${invoiceId}`; // Points to route not yet defined in App.js
-    console.log(`Navigating to view details (path TBD): ${targetPath}`);
+    // **** UPDATED NAVIGATION PATH ****
+    const targetPath = `/app/invoices/${invoiceId}`;
+    // console.log(`Navigating to view details: ${targetPath}`); // For debugging
     navigate(targetPath);
   }, [navigate]);
 
   const handleDownload = useCallback(async (invoiceId, invoiceNumber) => {
-    setActionError(null);
-    try { await downloadInvoicePDF(invoiceId); }
-    catch (err) { setActionError(`Could not download PDF for ${invoiceNumber}.`); }
+    setActionError(null); // Clear previous action errors
+    try {
+      await downloadInvoicePDF(invoiceId);
+      // Optionally set actionSuccess here if download service doesn't provide user feedback
+      // setActionSuccess(`Invoice ${invoiceNumber} PDF download initiated.`);
+    }
+    catch (err) {
+      setActionError(`Could not download PDF for ${invoiceNumber || 'invoice'}.`);
+    }
   }, []);
 
-  // Define Columns (removing helper dependencies as per ESLint)
   const invoiceColumns = useMemo(() => [
     { header: 'Invoice #', key: 'invoiceNumber' },
     { header: 'Customer Name', key: 'customerName' },
@@ -96,10 +95,9 @@ const ViewInvoicesPage = () => {
         </div>
       ),
     },
-  ], [handleViewDetails, handleDownload]); // Removed formatCurrency, formatDate
+  ], [handleViewDetails, handleDownload]);
 
 
-  // Render Logic (remains the same)
   if (loading) return <div className={styles.viewInvoicesPage}><h2>View Invoices</h2><Spinner message="Loading invoices..." /></div>;
   if (error) return <div className={styles.viewInvoicesPage}><h2>View Invoices</h2><Alert type="error" message={error} /></div>;
 
@@ -108,11 +106,22 @@ const ViewInvoicesPage = () => {
       <h2>View Invoices</h2>
       {actionError && <Alert type="error" message={actionError} onClose={() => setActionError(null)} />}
       {actionSuccess && <Alert type="success" message={actionSuccess} onClose={() => setActionSuccess(null)} />}
-      <SearchBar onSearch={setSearchTerm} placeholder="Search Invoices..." />
+      
+      <div className={styles.searchContainer}> {/* Added a wrapper for search bar if needed for styling */}
+        <SearchBar onSearch={setSearchTerm} placeholder="Search by Invoice #, Customer, Date, Amount, Cashier..." />
+      </div>
+      
       <Table columns={invoiceColumns} data={filteredInvoices} />
-      {!loading && filteredInvoices.length === 0 && searchTerm && (<p className={styles.noResults}>No invoices found matching "{searchTerm}".</p>)}
-      {!loading && invoices.length > 0 && filteredInvoices.length === 0 && !searchTerm && (<p className={styles.noResults}>No invoices match the current filter.</p>)}
-      {!loading && invoices.length === 0 && !error && (<p className={styles.noResults}>No invoices generated yet.</p>)}
+      
+      {!loading && filteredInvoices.length === 0 && searchTerm.trim() && (
+        <p className={styles.noResults}>No invoices found matching "{searchTerm}".</p>
+      )}
+      {!loading && invoices.length > 0 && filteredInvoices.length === 0 && !searchTerm.trim() && (
+        <p className={styles.noResults}>No invoices match the current filter.</p>
+      )}
+      {!loading && invoices.length === 0 && !error && (
+        <p className={styles.noResults}>No invoices generated yet.</p>
+      )}
     </div>
   );
 };

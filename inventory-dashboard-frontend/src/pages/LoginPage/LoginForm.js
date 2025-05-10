@@ -1,149 +1,9 @@
-/*import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import styles from './LoginPage.module.css';
-import { login } from '../../services/authService'; // Assuming you have an authService
-
-const LoginForm = () => {
-  const [identifier, setIdentifier] = useState(''); // Can be username or email
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
-  const navigate = useNavigate();
-
-  const handleSubmit = async (event) => {
-    event.preventDefault();
-    setError('');
-    setLoading(true);
-
-    try {
-      const response = await login(identifier, password);
-      setLoading(false);
-
-      if (response && response.token) {
-        // Store the token (e.g., in local storage or context)
-        localStorage.setItem('authToken', response.token);
-        // Redirect to the dashboard or a protected route
-        navigate('/dashboard');
-      } else if (response && response.message) {
-        setError(response.message);
-      } else {
-        setError('Login failed. Please try again.');
-      }
-    } catch (error) {
-      setLoading(false);
-      setError('An unexpected error occurred.');
-      console.error('Login error:', error);
-    }
-  };
-
-  return (
-    <form onSubmit={handleSubmit} className={styles.loginForm}>
-      {error && <div className={styles.error}>{error}</div>}
-      <div className={styles.formGroup}>
-        <label htmlFor="identifier">Username or Email</label>
-        <input
-          type="text"
-          id="identifier"
-          value={identifier}
-          onChange={(e) => setIdentifier(e.target.value)}
-          required
-        />
-      </div>
-      <div className={styles.formGroup}>
-        <label htmlFor="password">Password</label>
-        <input
-          type="password"
-          id="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-        />
-      </div>
-      <button type="submit" disabled={loading}>
-        {loading ? 'Logging In...' : 'Login'}
-      </button>
-    </form>
-  );
-};
-
-export default LoginForm;*/
-
-/*import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import styles from './LoginPage.module.css';
-import { login } from '../../services/authService'; // Assuming you have an authService
-
-const LoginForm = () => {
-  const [identifier, setIdentifier] = useState(''); // Can be username or email
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
-  const navigate = useNavigate();
-
-  const handleSubmit = async (event) => {
-    event.preventDefault();
-    setError('');
-    setLoading(true);
-
-    try {
-      const response = await login(identifier, password);
-      setLoading(false);
-
-      if (response && response.token) {
-        // Store the token (e.g., in local storage or context)
-        localStorage.setItem('authToken', response.token);
-        // Redirect to the dashboard or a protected route
-        navigate('/dashboard');
-      } else if (response && response.message) {
-        setError(response.message);
-      } else {
-        setError('Login failed. Please try again.');
-      }
-    } catch (error) {
-      setLoading(false);
-      setError('An unexpected error occurred.');
-      console.error('Login error:', error);
-    }
-  };
-
-  return (
-    <form onSubmit={handleSubmit} className={styles.loginForm}>
-      {error && <div className={styles.error}>{error}</div>}
-      <div className={styles.formGroup}>
-        <label htmlFor="identifier">Username or Email</label>
-        <input
-          type="text"
-          id="identifier"
-          value={identifier}
-          onChange={(e) => setIdentifier(e.target.value)}
-          required
-        />
-      </div>
-      <div className={styles.formGroup}>
-        <label htmlFor="password">Password</label>
-        <input
-          type="password"
-          id="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-        />
-      </div>
-      <button type="submit" disabled={loading}>
-        {loading ? 'Logging In...' : 'Login'}
-      </button>
-    </form>
-  );
-};
-
-export default LoginForm;*/
-
 import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom'; // Keep Link import (might be needed elsewhere, or remove if truly unused)
+import { useNavigate, Link } from 'react-router-dom'; // Link can be removed if not used on this page
 import { useAuth } from '../../context/AuthContext';
-import styles from './LoginPage.module.css'; // Styles specific to the login form/page
+import styles from './LoginPage.module.css';
 
-// Import your reusable components using the provided paths
+// Import your reusable components
 import Alert from '../../components/Alert/Alert';
 import Spinner from '../../components/Spinner/Spinner';
 import InputField from '../../components/InputField/InputField';
@@ -165,7 +25,8 @@ const LoginForm = () => {
     try {
       const result = await login(email, password);
       if (result.success) {
-        navigate('/dashboard');
+        // **** THIS IS THE CORRECTED NAVIGATION PATH ****
+        navigate('/app/dashboard'); // Navigate to the dashboard within the /app structure
       } else {
         setError(result.message || 'Login failed. Please check credentials.');
       }
@@ -178,7 +39,6 @@ const LoginForm = () => {
   };
 
   return (
-    // Assuming styles.loginForm provides the main form container styling
     <form onSubmit={handleSubmit} className={styles.loginForm}>
       {/* Optional: Add a heading if not provided by LoginPage.js */}
       {/* <h3 className={styles.formTitle}>Login</h3> */}
@@ -210,19 +70,17 @@ const LoginForm = () => {
       <Button
         type="submit"
         disabled={loading}
-        className={styles.loginButton}
+        className={styles.loginButton} // Ensure this class styles the button as needed
       >
         {loading ? <Spinner size="small" /> : 'Login'}
       </Button>
 
-      {/* --- REMOVED DUPLICATE LINK FROM HERE --- */}
-      {/*
-      <p className={styles.signupLink}>
-         Don't have an account? <Link to="/signup">Sign Up</Link>
+      {/* Example of where a signup link might go if LoginPage.js doesn't handle it */}
+      {/* 
+      <p className={styles.switchFormText}> 
+        Don't have an account? <Link to="/signup" className={styles.switchFormLink}>Sign Up</Link>
       </p>
       */}
-      {/* --- --- */}
-
     </form>
   );
 };

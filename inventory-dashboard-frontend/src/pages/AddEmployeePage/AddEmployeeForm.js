@@ -1,185 +1,161 @@
 import React, { useState } from 'react';
-// Removed useNavigate as it wasn't used in the provided snippet
-// import { useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom'; // Import useNavigate
 import styles from './AddEmployeePage.module.css';
 import { addEmployee } from '../../services/employeeService';
+
+// Assuming you have these components, or replace with your actual ones
+import Alert from '../../components/Alert/Alert';
+import Spinner from '../../components/Spinner/Spinner';
+import Button from '../../components/Button/Button'; // Assuming a Button component
+import InputField from '../../components/InputField/InputField'; // Assuming an InputField component
 
 const AddEmployeeForm = () => {
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
-  // --- ADDED PASSWORD STATE ---
   const [password, setPassword] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
-  // --- Default role to 'staff' or let it be empty if backend handles default ---
   const [role, setRole] = useState('staff');
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
   const [loading, setLoading] = useState(false);
-  // const navigate = useNavigate(); // If you need navigation after success
+  const navigate = useNavigate(); // Initialize useNavigate
 
   const handleSubmit = async (event) => {
     event.preventDefault();
     setError('');
     setSuccessMessage('');
 
-    // --- Optional: Add password validation ---
     if (!password) {
-        setError('Password is required.');
-        return;
+      setError('Password is required.');
+      return;
     }
-     if (password.length < 6) { // Example minimum length
-        setError('Password must be at least 6 characters long.');
-        return;
+    if (password.length < 6) {
+      setError('Password must be at least 6 characters long.');
+      return;
     }
 
     setLoading(true);
 
     try {
-      // --- CONSTRUCT DATA AS BACKEND EXPECTS ---
       const newEmployeeData = {
-        name: `${firstName} ${lastName}`.trim(), // Combine first and last name
+        name: `${firstName} ${lastName}`.trim(),
         email,
-        password, // Include password
-        role: role || 'staff', // Ensure role is sent, default if needed
-        // --- Include phoneNumber ONLY if your backend User model has it AND the route saves it ---
-        // phoneNumber,
+        password,
+        role: role || 'staff',
+        phoneNumber: phoneNumber || undefined, // Send undefined if empty
       };
 
-      console.log('Sending data to addEmployee service:', newEmployeeData); // Debugging log
-
-      const response = await addEmployee(newEmployeeData); // Pass the corrected data object
-      setLoading(false);
-
-      // --- ADJUSTED SUCCESS CHECK ---
-      // Check if the response has an _id (indicating successful creation)
+      const response = await addEmployee(newEmployeeData);
+      
       if (response && response._id) {
         setSuccessMessage(`Employee '${response.name}' added successfully!`);
-        // Optionally reset the form
         setFirstName('');
         setLastName('');
         setEmail('');
-        setPassword(''); // Reset password field
+        setPassword('');
         setPhoneNumber('');
-        setRole('staff'); // Reset role to default
-        // Optionally navigate away after success
-        // setTimeout(() => navigate('/employees'), 2000); // Example navigation
+        setRole('staff');
+        // Optionally navigate to the view employees page after a delay
+        setTimeout(() => {
+          // **** UPDATED NAVIGATION PATH ****
+          navigate('/app/view-employees');
+        }, 2000); // Navigate after 2 seconds
       } else if (response && response.message) {
-        // Handle specific error messages from backend (e.g., "User already exists")
         setError(response.message);
       } else {
-        // Generic failure message if response is unexpected
         setError('Failed to add employee. Please check the details and try again.');
       }
-    } catch (err) { // Changed variable name from 'error' to 'err' to avoid conflict
-      setLoading(false);
-      // Log the detailed error from the service/axios
+    } catch (err) {
       console.error('Error adding employee:', err);
-       // Try to display a more specific error from the backend if available
-       if (err.response && err.response.data && err.response.data.message) {
-           setError(`Error: ${err.response.data.message}`);
-       } else if (err.message) {
-           setError(`Error: ${err.message}`);
-       } else {
-           setError('An unexpected network or server error occurred.');
-       }
+      if (err.response && err.response.data && err.response.data.message) {
+        setError(`Error: ${err.response.data.message}`);
+      } else if (err.message) {
+        setError(`Error: ${err.message}`);
+      } else {
+        setError('An unexpected network or server error occurred.');
+      }
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
+    // Assuming styles.addEmployeeForm provides the main form styling
     <form onSubmit={handleSubmit} className={styles.addEmployeeForm}>
-      {/* Keep error and success messages */}
-      {error && <div className={styles.error}>{error}</div>}
-      {successMessage && <div className={styles.success}>{successMessage}</div>}
+      {/* Use Alert component for feedback */}
+      {error && <Alert type="error" message={error} onClose={() => setError('')} />}
+      {successMessage && <Alert type="success" message={successMessage} onClose={() => setSuccessMessage('')} />}
 
-      {/* --- Input Fields --- */}
-      <div className={styles.formGroup}>
-        <label htmlFor="firstName">First Name</label>
-        <input
-          type="text"
-          id="firstName"
-          value={firstName}
-          onChange={(e) => setFirstName(e.target.value)}
-          required
-          aria-describedby={error ? 'error-message' : undefined} // Accessibility
-        />
-      </div>
-      <div className={styles.formGroup}>
-        <label htmlFor="lastName">Last Name</label>
-        <input
-          type="text"
-          id="lastName"
-          value={lastName}
-          onChange={(e) => setLastName(e.target.value)}
-          required
-          aria-describedby={error ? 'error-message' : undefined}
-        />
-      </div>
-      <div className={styles.formGroup}>
-        <label htmlFor="email">Email</label>
-        <input
-          type="email"
-          id="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-          aria-describedby={error ? 'error-message' : undefined}
-        />
-      </div>
-
-      {/* --- ADDED PASSWORD FIELD --- */}
-      <div className={styles.formGroup}>
-        <label htmlFor="password">Password</label>
-        <input
-          type="password"
-          id="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-          minLength="6" // Example validation
-          aria-describedby={error ? 'error-message' : undefined}
-        />
-      </div>
-
-      <div className={styles.formGroup}>
-        <label htmlFor="phoneNumber">Phone Number (Optional)</label>
-        <input
-          type="tel"
-          id="phoneNumber"
-          value={phoneNumber}
-          onChange={(e) => setPhoneNumber(e.target.value)}
-          aria-describedby={error ? 'error-message' : undefined}
-        />
-      </div>
-      <div className={styles.formGroup}>
+      {/* Use InputField component for consistency */}
+      <InputField
+        label="First Name"
+        id="firstName"
+        type="text"
+        value={firstName}
+        onChange={(e) => setFirstName(e.target.value)}
+        required
+        disabled={loading}
+      />
+      <InputField
+        label="Last Name"
+        id="lastName"
+        type="text"
+        value={lastName}
+        onChange={(e) => setLastName(e.target.value)}
+        required
+        disabled={loading}
+      />
+      <InputField
+        label="Email"
+        id="email"
+        type="email"
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
+        required
+        autoComplete="new-email" /* To avoid browser autofill from admin's email */
+        disabled={loading}
+      />
+      <InputField
+        label="Password"
+        id="password"
+        type="password"
+        value={password}
+        onChange={(e) => setPassword(e.target.value)}
+        required
+        minLength="6"
+        autoComplete="new-password"
+        disabled={loading}
+      />
+      <InputField
+        label="Phone Number (Optional)"
+        id="phoneNumber"
+        type="tel"
+        value={phoneNumber}
+        onChange={(e) => setPhoneNumber(e.target.value)}
+        disabled={loading}
+      />
+      
+      {/* Role selection */}
+      <div className={styles.formGroup}> {/* Assuming formGroup class exists for label + select */}
         <label htmlFor="role">Role</label>
-        <select // Changed to select for potentially predefined roles
+        <select
           id="role"
           value={role}
           onChange={(e) => setRole(e.target.value)}
           required
-          aria-describedby={error ? 'error-message' : undefined}
+          disabled={loading}
+          className={styles.selectField} // Assuming a general select field style
         >
-            <option value="staff">Staff</option>
-            <option value="admin">Admin</option>
-            {/* Add other roles if applicable */}
+          <option value="staff">Staff</option>
+          <option value="admin">Admin</option>
         </select>
-        {/* Or keep as input if roles are freeform:
-        <input
-          type="text"
-          id="role"
-          value={role}
-          onChange={(e) => setRole(e.target.value)}
-          required
-        /> */}
       </div>
 
-      {/* Submit Button */}
-      <button type="submit" disabled={loading}>
-        {loading ? 'Adding Employee...' : 'Add Employee'}
-      </button>
-       {/* For accessibility with errors */}
-       {error && <p id="error-message" style={{ display: 'none' }}>{error}</p>}
+      {/* Submit button using Button component */}
+      <Button type="submit" disabled={loading} variant="primary">
+        {loading ? <Spinner size="small" /> : 'Add Employee'}
+      </Button>
     </form>
   );
 };

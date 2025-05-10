@@ -1,245 +1,20 @@
-/*import React, { useState } from 'react';
-import { useNavigate, Link} from 'react-router-dom';
-import styles from './SignupPage.module.css';
-import { signup } from '../../services/authService'; // Assuming you have this service
-
-const SignupForm = () => {
-  const [username, setUsername] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [error, setError] = useState('');
-  const [successMessage, setSuccessMessage] = useState('');
-  const [loading, setLoading] = useState(false);
-  const navigate = useNavigate();
-
-  const handleSubmit = async (event) => {
-    event.preventDefault();
-    setError('');
-    setSuccessMessage('');
-    setLoading(true);
-
-    if (password !== confirmPassword) {
-      setError('Passwords do not match.');
-      setLoading(false);
-      return;
-    }
-
-    try {
-      const userData = {
-        username,
-        email,
-        password,
-      };
-
-      const response = await signup(userData);
-      setLoading(false);
-
-      if (response && response.success) {
-        setSuccessMessage('Account created successfully! Redirecting to login...');
-        setTimeout(() => navigate('/login'), 1500);
-      } else if (response && response.message) {
-        setError(response.message);
-      } else {
-        setError('Failed to create account. Please try again.');
-      }
-    } catch (error) {
-      setLoading(false);
-      setError('An unexpected error occurred.');
-      console.error('Error signing up:', error);
-    }
-  };
-
-  return (
-    <form onSubmit={handleSubmit} className={styles.signupForm}>
-      {error && <div className={styles.error}>{error}</div>}
-      {successMessage && <div className={styles.success}>{successMessage}</div>}
-      <div className={styles.formGroup}>
-        <label htmlFor="username">Username</label>
-        <input
-          type="text"
-          id="username"
-          value={username}
-          onChange={(e) => setUsername(e.target.value)}
-          required
-        />
-      </div>
-      <div className={styles.formGroup}>
-        <label htmlFor="email">Email</label>
-        <input
-          type="email"
-          id="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-        />
-      </div>
-      <div className={styles.formGroup}>
-        <label htmlFor="password">Password</label>
-        <input
-          type="password"
-          id="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-        />
-      </div>
-      <div className={styles.formGroup}>
-        <label htmlFor="confirmPassword">Confirm Password</label>
-        <input
-          type="password"
-          id="confirmPassword"
-          value={confirmPassword}
-          onChange={(e) => setConfirmPassword(e.target.value)}
-          required
-        />
-      </div>
-      <button type="submit" disabled={loading}>
-        {loading ? 'Creating Account...' : 'Sign Up'}
-      </button>
-      <p className={styles.loginLink}>
-        Already have an account? <Link to="/login">Log In</Link>
-      </p>
-    </form>
-  );
-};
-
-export default SignupForm;*/
-
-/*import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import styles from './SignupPage.module.css';
-import { signup } from '../../services/authService'; // Assuming you have this service
-
-const SignupForm = () => {
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [role, setRole] = useState('staff'); // Default to 'staff'
-  const [error, setError] = useState('');
-  const [successMessage, setSuccessMessage] = useState('');
-  const [loading, setLoading] = useState(false);
-  const navigate = useNavigate();
-
-  const handleSubmit = async (event) => {
-    event.preventDefault();
-    setError('');
-    setSuccessMessage('');
-    setLoading(true);
-
-    if (password !== confirmPassword) {
-      setError('Passwords do not match.');
-      setLoading(false);
-      return;
-    }
-
-    try {
-      const userData = {
-        name,
-        email,
-        password,
-        role, // Include the selected role
-      };
-
-      const response = await signup(userData);
-      setLoading(false);
-
-      if (response && response.success) {
-        setSuccessMessage('Account created successfully! Redirecting to login...');
-        setTimeout(() => navigate('/login'), 1500);
-      } else if (response && response.message) {
-        setError(response.message);
-      } else {
-        setError('Failed to create account. Please try again.');
-      }
-    } catch (error) {
-      setLoading(false);
-      setError('An unexpected error occurred.');
-      console.error('Error signing up:', error);
-    }
-  };
-
-  return (
-    <form onSubmit={handleSubmit} className={styles.signupForm}>
-      {error && <div className={styles.error}>{error}</div>}
-      {successMessage && <div className={styles.success}>{successMessage}</div>}
-      <div className={styles.formGroup}>
-        <label htmlFor="name">Name</label>
-        <input
-          type="text"
-          id="name"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          required
-        />
-      </div>
-      <div className={styles.formGroup}>
-        <label htmlFor="email">Email</label>
-        <input
-          type="email"
-          id="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-        />
-      </div>
-      <div className={styles.formGroup}>
-        <label htmlFor="password">Password</label>
-        <input
-          type="password"
-          id="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-        />
-      </div>
-      <div className={styles.formGroup}>
-        <label htmlFor="confirmPassword">Confirm Password</label>
-        <input
-          type="password"
-          id="confirmPassword"
-          value={confirmPassword}
-          onChange={(e) => setConfirmPassword(e.target.value)}
-          required
-        />
-      </div>
-      <div className={styles.formGroup}>
-        <label htmlFor="role">Role</label>
-        <select
-          id="role"
-          value={role}
-          onChange={(e) => setRole(e.target.value)}
-        >
-          <option value="staff">Staff</option>
-          <option value="admin">Admin</option>
-        </select>
-      </div>
-      <button type="submit" disabled={loading}>
-        {loading ? 'Creating Account...' : 'Sign Up'}
-      </button>
-      <p className={styles.loginLink}>
-        Already have an account? <Link to="/login">Log In</Link>
-      </p>
-    </form>
-  );
-};
-
-export default SignupForm;*/
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styles from './SignupPage.module.css';
 import { signup as authServiceSignup } from '../../services/authService';
-import Alert from '../../components/Alert/Alert';
-import Spinner from '../../components/Spinner/Spinner';
+import Alert from '../../components/Alert/Alert'; // Assuming Alert component exists
+import Spinner from '../../components/Spinner/Spinner'; // Assuming Spinner component exists
+// Assuming Button and InputField components are used as per your previous examples
+// import Button from '../../components/Button/Button';
+// import InputField from '../../components/InputField/InputField';
+
 
 const SignupForm = () => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [role, setRole] = useState('');
+  const [role, setRole] = useState(''); // Initialize role as empty string
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
@@ -249,53 +24,55 @@ const SignupForm = () => {
     setError('');
 
     if (!name || !email || !password || !confirmPassword || !role) {
-        setError('Please fill in all fields.');
-        return;
+      setError('Please fill in all fields.');
+      return;
     }
     if (password !== confirmPassword) {
       setError('Passwords do not match.');
       return;
     }
     if (password.length < 6) {
-        setError('Password must be at least 6 characters long.');
-        return;
+      setError('Password must be at least 6 characters long.');
+      return;
     }
 
     setLoading(true);
 
     try {
-        const signupData = { name, email, password, role };
-        console.log('Attempting signup with:', { name, email, role });
-        const response = await authServiceSignup(signupData);
-        setLoading(false);
+      const signupData = { name, email, password, role };
+      const response = await authServiceSignup(signupData);
 
-        if (response && response._id) {
-             console.log("Signup successful!", response);
-             navigate('/login', { state: { message: 'Signup successful! Please log in.' } });
-        } else {
-             setError(response?.message || 'Signup failed. Unexpected response.');
-        }
+      if (response && response._id) { // Check for a successful response (e.g., created user ID)
+        console.log("Signup successful!", response);
+        // Navigate to login page with a success message in state
+        navigate('/login', { state: { message: 'Signup successful! Please log in.' } });
+      } else {
+        // Handle cases where backend returns an error message but not a typical error status
+        setError(response?.message || 'Signup failed. Unexpected response from server.');
+      }
 
     } catch (err) {
-        setLoading(false);
-        console.error("Signup page error:", err);
-        setError(err.response?.data?.message || err.message || 'An error occurred during signup.');
+      console.error("Signup page error:", err);
+      setError(err.response?.data?.message || err.message || 'An error occurred during signup.');
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
     <form onSubmit={handleSubmit} className={styles.signupForm}>
-      {error && <p className={styles.errorMessage}>{error}</p>}
-      {/* Or use Alert: {error && <Alert type="error" message={error} />} */}
+      {/* Use Alert component if available, otherwise keep p tag */}
+      {error && <Alert type="error" message={error} onClose={() => setError('')} />}
+      {/* {error && <p className={styles.errorMessage}>{error}</p>} */}
 
-      {/* Form Group for Name */}
-      <div className={`form-group ${styles.formGroup}`}>
+
+      <div className={`${styles.formGroup}`}> {/* Removed 'form-group' global class if not defined elsewhere */}
         <label htmlFor="name" className={styles.label}>Enter name:</label>
         <input
           type="text"
           id="name"
-          className={`form-input ${styles.inputField}`}
-          placeholder="Your full name" // <<< ADDED PLACEHOLDER
+          className={`${styles.inputField}`} // Removed 'form-input' global class
+          placeholder="Your full name"
           value={name}
           onChange={(e) => setName(e.target.value)}
           required
@@ -303,14 +80,13 @@ const SignupForm = () => {
         />
       </div>
 
-      {/* Form Group for Email */}
-      <div className={`form-group ${styles.formGroup}`}>
+      <div className={`${styles.formGroup}`}>
         <label htmlFor="email" className={styles.label}>Enter email:</label>
         <input
           type="email"
           id="email"
-          className={`form-input ${styles.inputField}`}
-          placeholder="you@example.com" // <<< ADDED PLACEHOLDER
+          className={`${styles.inputField}`}
+          placeholder="you@example.com"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           required
@@ -319,14 +95,13 @@ const SignupForm = () => {
         />
       </div>
 
-      {/* Form Group for Password */}
-      <div className={`form-group ${styles.formGroup}`}>
+      <div className={`${styles.formGroup}`}>
         <label htmlFor="password" className={styles.label}>Enter Password:</label>
         <input
           type="password"
           id="password"
-          className={`form-input ${styles.inputField}`}
-          placeholder="Create a strong password (min. 6 chars)" // <<< ADDED PLACEHOLDER
+          className={`${styles.inputField}`}
+          placeholder="Create a strong password (min. 6 chars)"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           required
@@ -335,14 +110,13 @@ const SignupForm = () => {
         />
       </div>
 
-      {/* Form Group for Confirm Password */}
-      <div className={`form-group ${styles.formGroup}`}>
+      <div className={`${styles.formGroup}`}>
         <label htmlFor="confirmPassword" className={styles.label}>Confirm Password:</label>
         <input
           type="password"
           id="confirmPassword"
-          className={`form-input ${styles.inputField}`}
-          placeholder="Re-enter your password" // <<< ADDED PLACEHOLDER
+          className={`${styles.inputField}`}
+          placeholder="Re-enter your password"
           value={confirmPassword}
           onChange={(e) => setConfirmPassword(e.target.value)}
           required
@@ -351,29 +125,30 @@ const SignupForm = () => {
         />
       </div>
 
-      {/* Form Group for Role Selection */}
-      <div className={`form-group ${styles.formGroup}`}>
+      <div className={`${styles.formGroup}`}>
         <label htmlFor="role" className={styles.label}>Choose role:</label>
         <select
-           id="role"
-           className={`form-input ${styles.inputField} ${styles.selectField}`}
-           value={role}
-           onChange={(e) => setRole(e.target.value)}
-           required
-           disabled={loading}
-         >
-           <option value="" disabled>Select Role</option>
-           <option value="staff">Staff</option>
-           <option value="admin">Admin</option>
-         </select>
+          id="role"
+          className={`${styles.inputField} ${styles.selectField}`}
+          value={role}
+          onChange={(e) => setRole(e.target.value)}
+          required
+          disabled={loading}
+        >
+          <option value="" disabled>Select Role</option>
+          <option value="staff">Staff</option>
+          <option value="admin">Admin</option>
+        </select>
       </div>
 
+      {/* Assuming you have a Button component, otherwise use styled HTML button */}
       <button
         type="submit"
-        className={`btn btn-primary ${styles.signupButton}`}
+        className={styles.signupButton} // Use your specific signup button style
         disabled={loading}
       >
-        {loading ? <Spinner size="small" /> : 'Submit'}
+        {loading ? <Spinner size="small" /> : 'Sign Up'}
+        {/* Changed Submit to Sign Up for clarity */}
       </button>
     </form>
   );
