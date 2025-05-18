@@ -130,4 +130,31 @@
 .errorMessage { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
 .successMessage { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
 
-/* REMOVED .formRow, .fullWidthField styles */
+/* Add these to AddProductPage.module.css */
+
+/* ... existing styles ... */
+
+.detailedErrorsContainer {
+    margin-top: 1rem;
+    margin-bottom: 1.5rem;
+    padding: 1rem;
+    border: 1px solid var(--accent-error);
+    background-color: rgba(239, 68, 68, 0.05); /* Light error background */
+    border-radius: var(--border-radius);
+}
+.detailedErrorsContainer h4 {
+    margin-top: 0;
+    margin-bottom: 0.75rem;
+    color: var(--accent-error);
+    font-weight: 600;
+}
+.errorList {
+    list-style-type: disc;
+    padding-left: 1.5rem;
+    margin: 0;
+    font-size: 0.85rem;
+    color: var(--text-dark); /* Or a darker error color */
+}
+.errorList li {
+    margin-bottom: 0.3rem;
+}
