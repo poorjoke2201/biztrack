@@ -122,9 +122,9 @@ const FeaturesPage = () => {
                         <h1 className={styles.heroHeadline}>
                             <TypeAnimation
                                 sequence={[
-                                    'Tired of manual inventory management?', 1500,
-                                    'Tired of tracking sales?', 1500,
-                                    'Simplify your business.', 3000,
+                                    'Tired of manual inventory management?', 4000,
+                                    'Tired of tracking sales?', 4000,
+                                    'Simplify your business.', 4000,
                                 ]}
                                 wrapper="span"
                                 cursor={true}
